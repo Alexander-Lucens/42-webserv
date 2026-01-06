@@ -5,7 +5,7 @@ This project replicates the core functionality of NGINX, including static file s
 
 ---
 
-## Authors: 
+#### Authors: 
  - [Alexander Kuzmin](https://github.com/Alexander-Lucens)
  - [Antoine Margolloff](https://profile-v3.intra.42.fr/users/amargolo) - change link to whatever you prefere
  - [?](?)
