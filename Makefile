@@ -14,7 +14,19 @@ NAME        := webserv
 
 # **************************************************************************** #
 
-SRCS        :=  srcs/main.cpp
+SRCS        :=  srcs/main.cpp \
+				srcs/Request.cpp \
+				srcs/Response.cpp \
+				srcs/Buffer.cpp \
+				srcs/Socket.cpp \
+				srcs/Connection.cpp \
+				srcs/EventLoop.cpp \
+				srcs/HTTPParser.cpp \
+				srcs/HTTPSerializer.cpp \
+				srcs/HTTPConnectionState.cpp \
+				srcs/Router.cpp \
+				srcs/ServerConfig.cpp \
+				srcs/StaticFileHandler.cpp
 
 # **************************************************************************** #
 
@@ -29,11 +41,9 @@ OBJS        := $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
 all: $(NAME)
 
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJDIR):
-	@mkdir -p $(OBJDIR)
 
 $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
