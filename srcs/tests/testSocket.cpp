@@ -29,7 +29,7 @@ bool testSocket() {
                 std::cout << "Greeting sent. Connection closed.\n" << std::endl;
             }
             
-            usleep(1000);
+            usleep(10000);
         }
 
     } catch (const std::exception &e) {
