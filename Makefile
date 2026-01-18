@@ -6,7 +6,7 @@
 #    By: akuzmin <akuzmin@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/01/18 20:29:16 by akuzmin          ###   ########.fr        #
+#    Updated: 2026/01/18 20:45:45 by akuzmin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,40 +14,45 @@ NAME        := webserv
 
 # **************************************************************************** #
 
-SRCS        :=  srcs/main.cpp \
-				srcs/shared/Request.cpp srcs/shared/Response.cpp \
+INCLUDE     := includes
+
+SRC_DIR		:= srcs
+
+SRCS        :=  $(SRC_DIR)/main.cpp \
+				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp \
 
 # **************************************************************************** #
 
+CFLAGS      := -Wall -Wextra -Werror -std=c++98 -I$(INCLUDE)
 CC          := c++
-CFLAGS      := -Wall -Wextra -Werror -std=c++98
 RM          := rm -rf
 
-OBJDIR      := objs
-OBJS        := $(SRCS:%.cpp=$(OBJDIR)/%.o)
+OBJ_DIR      := objs
+
+OBJS        := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # **************************************************************************** #
 
 all: $(NAME)
 
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+$(NAME): $(OBJS)
+	@echo "Linking $(NAME)..."
+	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+	@echo "Done."
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR):
-	@mkdir -p $(OBJDIR)
+clean:
+	@echo "Cleaning objects..."
+	@$(RM) $(OBJ_DIR)
 
-$(NAME): $(OBJS)
-	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
-	@echo "Creating program $(NAME)."
+fclean: clean
+	@echo "Removing $(NAME)..."
+	@$(RM) $(NAME)
 
 re: fclean all
 
-clean:
-	@$(RM) $(OBJDIR)
-	@echo "Deleting object files for program $(NAME)."
-
-fclean: clean
-	@$(RM) $(NAME)
-	@echo "Deleting program $(NAME)."
-
-.PHONY: all re clean fclean
+.PHONY: all clean fclean re

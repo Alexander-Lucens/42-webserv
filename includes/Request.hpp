@@ -1,13 +1,16 @@
 
 #pragma once
 
-#include <iostream>
+#include <string>
 #include <map>
+#include <iostream>
+#include <sstream>
 
 /**
  * @brief Class for handling HTTP requests
  * @method GET, POST, DELETE, etc.
  * @uri /index.html, /api/data, etc.
+ * @path part of the URI before '?' - need to be filled in Parser!
  * @version HTTP/1.1, HTTP/2, etc. more likely only 1.1
  * @headers key-value pairs of headers as 'Host: localhost, Content-Type: text/html'
  * @body request body
@@ -24,6 +27,7 @@ class Request {
 	public:
 		std::string method;
 		std::string uri;
+		std::string path;
 		std::string version;
 		std::map<std::string, std::string> headers;
 		std::string body;
@@ -48,4 +52,6 @@ class Request {
 		void clear();
 
 		std::string getHeader(const std::string &key) const;
+		void setHeader(const std::string &key, const std::string &value);
+		std::string toString() const;
 };

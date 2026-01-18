@@ -1,0 +1,7 @@
+
+.DS_Store
+.vscode
+
+/objs
+*.o
+*.log

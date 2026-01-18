@@ -1,11 +1,10 @@
 #include "Response.hpp"
 
 Response::Response(const Response &other) 
-    : version(other.version), statusCode(other.statusCode), statusMessage(other.statusMessage), 
+    : statusCode(other.statusCode), statusMessage(other.statusMessage), version(other.version),
       headers(other.headers), body(other.body) {}
 
-Response::Response() 
-    : statusCode(200), statusMessage("OK"), version("HTTP/1.1") {}
+Response::Response() : statusCode(200), statusMessage("OK"), version("HTTP/1.1") {}
 
 Response::~Response() {}
 
@@ -34,11 +33,14 @@ std::string Response::toString() const {
 
 	responseStream << version << " " << statusCode << " " << statusMessage << "\r\n";
 
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+		if (it->first == "Content-Length") {
+			continue;
+		}
+		responseStream << it->first << ": " << it->second << "\r\n";
+	}
 	if (headers.find("Content-Length") == headers.end()) {
 		responseStream << "Content-Length: " << body.size() << "\r\n";
-	}
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		responseStream << it->first << ": " << it->second << "\r\n";
 	}
 	responseStream << "\r\n";
 	responseStream << body;

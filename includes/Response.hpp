@@ -23,10 +23,9 @@
  */
 class Response {
 	public:
-		std::string version;
 		int statusCode;
 		std::string statusMessage;
-
+		std::string version;
 		std::map<std::string, std::string> headers;
 		std::string body;
 
