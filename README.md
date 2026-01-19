@@ -1,24 +1,24 @@
 # Webserv
 
-A custom HTTP/1.1 server written in C++98 using non-blocking I/O (`poll`).
+A custom HTTP/1.1 server written in C++98 using non-blocking I/O (`epoll`).
 This project replicates the core functionality of NGINX, including static file serving, CGI support, and multiple port listening.
 
 ---
 
 #### Authors: 
  - [Alexander Kuzmin](https://github.com/Alexander-Lucens)
- - [Antoine Margolloff](https://profile-v3.intra.42.fr/users/amargolo) - change link to whatever you prefere
- - [?](?)
+ - [Antoine Margolloff](https://github.com/AntoineMargo)
+ - [Lara Krämer](https://github.com/LaraKraemer)
 
 ---
 
-## 🛠 Prerequisites
+## Prerequisites
 
 You only need **Docker** to ensure a consistent development environment (Linux/Debian) across all OSs (Mac, Windows, Linux).
 
 * **[Install Docker Desktop](https://www.docker.com/products/docker-desktop/)**
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Launch the Environment**
 Start the Docker container with the configured environment:
@@ -50,5 +50,3 @@ exit
 ```
 
 ---
-
-*Detailed architecture and internal documentation will be pleased in the `/docs` folder.*
