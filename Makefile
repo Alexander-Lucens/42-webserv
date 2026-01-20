@@ -3,14 +3,15 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: akuzmin <akuzmin@student.42berlin.de>      +#+  +:+       +#+         #
+#    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/01/18 22:22:06 by akuzmin          ###   ########.fr        #
+#    Updated: 2026/01/20 13:43:03 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME        := webserv
+TEST_NAME	:= runTest
 
 # **************************************************************************** #
 
@@ -22,6 +23,9 @@ SRCS        :=  $(SRC_DIR)/main.cpp \
 				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp \
 				$(SRC_DIR)/part1/Socket.cpp \
 				${SRC_DIR}/tests/testRequest.cpp ${SRC_DIR}/tests/testResponse.cpp ${SRC_DIR}/tests/testSocket.cpp \
+				
+TEST_SRCS	:= tests/test_response.cpp \
+				srcs/Response.cpp 
 
 # **************************************************************************** #
 
@@ -30,19 +34,48 @@ CC          := c++
 RM          := rm -rf
 
 OBJ_DIR      := objs
-
 OBJS        := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+TESTDIR		:= test_objs
+TEST_OBJS	:= $(OBJ_DIR)/tests/test_response.o \
+			 	$(OBJ_DIR)/srcs/shared/Request.o \
+				$(OBJ_DIR)/srcs/shared/Response.o
+               
 
 # **************************************************************************** #
 
 all: $(NAME)
+
+test: $(TEST_NAME)
 
 $(NAME): $(OBJS)
 	@echo "Linking $(NAME)..."
 	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 	@echo "Done."
 
+
+$(TEST_NAME): $(TEST_OBJS)
+	@$(CC) $(CFLAGS) $(TEST_OBJS) -o $(TEST_NAME)
+	@echo "Creating test program $(TEST_NAME)."
+	@./$(TEST_NAME)
+
+
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/*/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/tests/%.o: tests/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/srcs/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
@@ -57,4 +90,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re test
