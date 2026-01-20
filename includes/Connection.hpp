@@ -14,8 +14,8 @@ class Connection {
 		std::string socket;
 		std::string read_buffer;
 		std::string write_buffer;
-		int			parse_state;
 		Request		request;
+
 		Connection();
 		~Connection();
 		Connection(const Connection &other);
