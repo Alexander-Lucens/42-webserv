@@ -20,7 +20,7 @@ socket sends it
 */
 
 // Default constructor
-Response::Response() : _status_code(200) {}
+Response::Response() : _status_code(200), version("HTTP/1.1 ") {}
 
 // Copy constructor
 Response::Response(const Response& other)
@@ -178,14 +178,16 @@ void Response::set_header(const std::string &key, const std::string &value)
 void Response::set_body(const std::string &html_body)
 {
 	_html_body = html_body;
-	_headers["Content-Length"] = html_body.size();
+	std::stringstream ss;
+	ss << html_body.size();
+	_headers["Content-Length"] = ss.str();
 }
 
 /* Sends response to socket (creates one liner) */
 std::string Response::serialize()
 {
 	std::ostringstream out;
-	out << "HTTP/1.1 " << this->_status_code << " " << reason_message(this->_status_code) << NEW_LINE;
+	out << this->version << this->_status_code << " " << reason_message(this->_status_code) << NEW_LINE;
 
 	// write all headers
 	for (std::map<std::string, std::string>::const_iterator map_item = this->_headers.begin();

@@ -3,9 +3,14 @@
 #include "Colors.hpp"
 #include <unistd.h>
 
+#include "Response.hpp"
+
 bool testSocket() {
     try {
         Socket serverSocket;
+		Response response;
+		response.set_body("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>403 Error</title><link rel=\"stylesheet\" href=\"../base_page/style.css\"> \
+	</head><body><h1 class=\"header-error\">403</h1><p class=\"body-error\">Forbidden. You're missing permissions. </p></body></body></html>");
         serverSocket.setup(8080);
 
         std::cout << BG_GREEN << BWHITE << " SERVER STARTED " << RESET << std::endl;
@@ -19,10 +24,12 @@ bool testSocket() {
             int clientFd = accept(serverSocket.getFd(), (struct sockaddr*)&clientAddr, &clientLen);
             
             if (clientFd >= 0) {
-                std::cout << "\n" << BG_MAGENTA << BWHITE << " NEW CONNECTION! " << RESET << std::endl;
+                std::cout << "\"" << BG_MAGENTA << BWHITE << " NEW CONNECTION! " << RESET << std::endl;
                 std::cout << GREEN << "Client FD: " << clientFd << RESET << std::endl;
                 
-                std::string msg = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nHello World!";
+                
+				std::string msg = response.serialize();
+				std::cout << msg << std::endl;
                 write(clientFd, msg.c_str(), msg.length());
                 close(clientFd);
                 
