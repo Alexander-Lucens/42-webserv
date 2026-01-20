@@ -9,7 +9,8 @@ void test_handle_get()
 	request.method = "GET";
 	request.path = "/";
 
-	Response response = response.handle_get(request);
+	Response response;
+	response = response.handle_get(request);
 	std::string serialized = response.serialize();
 
 	assert(serialized.find("HTTP/1.1 200 OK") != std::string::npos);
@@ -17,7 +18,7 @@ void test_handle_get()
 	std::cout << "✅ test_handle_get passed\n";
 }
 
-
+/* 
 int main(void)
 {
 	try
@@ -28,7 +29,8 @@ int main(void)
 	catch (const std::exception& e)
 	{
 		std::cerr << "Error: " << e.what() << "\n";
-		return (1);
+		return 1;
 	}
-	return (0);
-}
+	return 0;
+ } */
+
