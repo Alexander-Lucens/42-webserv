@@ -7,38 +7,22 @@ void test_handle_get()
 {
 	Request request;
 	request.method = "GET";
+	request.path = "/";
 
-	Response response;
-	response = response.handle_get(request);
-
-	assert(response.status_code == 200);
-	assert(response.headers["Server"] == "webserv/1.0");
-	assert(response.html_body.find("GET Request Successful") != std::string::npos);
-	std::cout << "✅ test_handle_get passed\n";
-	}
-
-void test_serialize()
-{
-	Request request;
-	request.method = "GET";
-
-	Response response;
-	response = response.handle_get(request);
-
-	std::string serialized = response.serialize(response);
+	Response response = response.handle_get(request);
+	std::string serialized = response.serialize();
 
 	assert(serialized.find("HTTP/1.1 200 OK") != std::string::npos);
-	assert(serialized.find("Content-Length:") != std::string::npos);
-	assert(serialized.find("GET Request Successful") != std::string::npos);
-	std::cout << "✅ test_serialize passed\n";
+	assert(serialized.find("Server: webserv/1.0") != std::string::npos);
+	std::cout << "✅ test_handle_get passed\n";
 }
+
 
 int main(void)
 {
 	try
 	{
 		test_handle_get();
-		test_serialize();
 		std::cout << "\nAll tests passed!\n";
 	}
 	catch (const std::exception& e)

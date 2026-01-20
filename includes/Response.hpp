@@ -6,7 +6,15 @@
 #include <map>
 #include <ctime>
 #include <sstream>
+#include <fstream>
 #include "Request.hpp"
+
+
+#define NEW_LINE		"\r\n"
+#define BLANK_LINE		"\r\n\r\n"
+#define SERVER			"webserv/1.0"
+
+
 
 /**
  * @brief Represents an HTTP response.
@@ -25,13 +33,13 @@
  */
 class Response {
 	private:
+		int _status_code;
+		std::string _html_body;
+		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
+		std::map<std::string, std::string> _headers;
 
 	public:
-		int status_code;
-		std::string html_body;
-		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
-		std::map<std::string, std::string> headers;
-		std::string body;
+		
 
 		/* ----- OCF ----- */
 		Response();
@@ -47,8 +55,13 @@ class Response {
 		Response handle_error(const int error_code);
 		Response handle_request(const Request &request);
 
+		// Setter
+		void set_status(int status_code);
+		void set_header(const std::string &key, const std::string &value);
+		void set_body(const std::string &html_body);
+
 		// Serializer 
-		std::string serialize(const Response &response);
+		std::string serialize();
 
 
 		// Helper 
