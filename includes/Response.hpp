@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <ctime>
@@ -39,7 +40,7 @@ class Response {
 		std::map<std::string, std::string> _headers;
 
 	public:
-		
+		std::string version; 
 
 		/* ----- OCF ----- */
 		Response();
