@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>webserv</title>
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<h1>WEBSERV 👀</h1>
+		<p>A static website served by our C++ web server.</p>
+		<div class="button-container">
+			<!-- GET -->
+			<form method="GET" action="/index.html" style="display:inline;">
+				<button type="submit" class="get-btn">GET Request</button>
+			</form>
+			<!-- POST -->
+			<form method="POST" action="/submit" style="display:inline;">
+				<input type="hidden" name="data" value="test_post_data">
+				<button type="submit" class="post-btn">POST Request</button>
+			</form>
+			<!-- DELETE -->
+			<form method="POST" action="/delete" style="display:inline;">
+				<input type="hidden" name="_method" value="DELETE">
+				<button type="submit" class="delete-btn">DELETE Request</button>
+			</form>
+			<!-- File Upload -->
+			<form method="POST" action="/upload" enctype="multipart/form-data" style="display:inline;">
+				<input type="file" name="file" id="fileInput" style="display:none;">
+				<button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click();">Upload File</button>
+				<input type="submit" style="display:none;">
+			</form>
+		</div>
+	</body>
+	</body>
+	<footer>
+		 <p>&copy; 2026 webserv | Developed by Aleksandr Kuzmin | Antoine Margoloff | Lara Krämer </p>
+	</footer>
+</html>
