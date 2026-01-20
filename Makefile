@@ -6,7 +6,7 @@
 #    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/01/19 13:31:07 by lkramer          ###   ########.fr        #
+#    Updated: 2026/01/20 12:40:01 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,10 +20,11 @@ INCLUDE     := includes
 SRC_DIR		:= srcs
 
 SRCS        :=  $(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp \
+				$(SRC_DIR)/shared/Request.cpp \
+				$(SRC_DIR)/shared/Response.cpp 
 
 TEST_SRCS	:= tests/test_response.cpp \
-				srcs/Response.cpp \
+				srcs/Response.cpp 
 
 # **************************************************************************** #
 
@@ -35,11 +36,15 @@ OBJ_DIR      := objs
 OBJS        := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 TESTDIR		:= test_objs
-TEST_OBJS	:= $(TEST_SRCS:%.cpp=$(OBJDIR)/%.o)
+TEST_OBJS	:= $(OBJ_DIR)/tests/test_response.o \
+			 	$(OBJ_DIR)/srcs/shared/Request.o \
+				$(OBJ_DIR)/srcs/shared/Response.o
+               
 
 # **************************************************************************** #
 
 all: $(NAME)
+
 test: $(TEST_NAME)
 
 $(NAME): $(OBJS)
@@ -47,12 +52,29 @@ $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
 	@echo "Done."
 
+
 $(TEST_NAME): $(TEST_OBJS)
-    @$(CC) $(CFLAGS) $(TEST_OBJS) -o $(TEST_NAME)
-    @echo "Creating test program $(TEST_NAME)."
-    @./$(TEST_NAME)
+	@$(CC) $(CFLAGS) $(TEST_OBJS) -o $(TEST_NAME)
+	@echo "Creating test program $(TEST_NAME)."
+	@./$(TEST_NAME)
+
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/*/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/tests/%.o: tests/%.cpp
+	@mkdir -p $(dir $@)
+	@echo "Compiling $<..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/srcs/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	@echo "Compiling $<..."
 	@$(CC) $(CFLAGS) -c $< -o $@
@@ -67,4 +89,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re test
