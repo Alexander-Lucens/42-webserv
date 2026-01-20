@@ -6,7 +6,7 @@
 #    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/01/20 12:40:01 by lkramer          ###   ########.fr        #
+#    Updated: 2026/01/20 13:43:03 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,9 +20,10 @@ INCLUDE     := includes
 SRC_DIR		:= srcs
 
 SRCS        :=  $(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/shared/Request.cpp \
-				$(SRC_DIR)/shared/Response.cpp 
-
+				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp \
+				$(SRC_DIR)/part1/Socket.cpp \
+				${SRC_DIR}/tests/testRequest.cpp ${SRC_DIR}/tests/testResponse.cpp ${SRC_DIR}/tests/testSocket.cpp \
+				
 TEST_SRCS	:= tests/test_response.cpp \
 				srcs/Response.cpp 
 

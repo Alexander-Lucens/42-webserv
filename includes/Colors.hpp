@@ -3,6 +3,8 @@
 #ifndef COLORS_HPP
 #define COLORS_HPP
 
+#include <iostream>
+
 #define RESET   "\033[0m"
 
 #define BLACK   "\033[0;30m"
@@ -35,9 +37,9 @@
 
 #define ERROR(text)		std::cerr << BG_RED << " Error " << RESET << " " << RED << text << RESET << std::endl;
 	
-#define WARNING(text)	std::cerr << BG_YELLOW << "  Warning " << RESET << " " << YELLOW << text << RESET << std::endl;
+#define WARNING(text)	std::cerr << BG_YELLOW << " Warning " << RESET << " " << YELLOW << text << RESET << std::endl;
 
-#define INFO(text)		std::cout << BG_CYAN << " Info    " << RESET << " " << CYAN << text << RESET << std::endl;
+#define INFO(text)		std::cout << BG_CYAN << " Info " << RESET << " " << CYAN << text << RESET << std::endl;
 
 #define SUCCESS(text)		std::cout << BG_GREEN << " Success " << RESET << " " << GREEN << text << RESET << std::endl;
 
