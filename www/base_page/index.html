@@ -2,8 +2,8 @@
 
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>webserv</title>
 		<link rel="stylesheet" href="style.css">
 	</head>
@@ -26,11 +26,18 @@
 				<button type="submit" class="delete-btn">DELETE Request</button>
 			</form>
 			<!-- File Upload -->
-			<form method="POST" action="/upload" enctype="multipart/form-data" style="display:inline;">
+			<form method="POST" action="/upload" enctype="multipart/form-data" id="uploadForm" style="display:inline;">
 				<input type="file" name="file" id="fileInput" style="display:none;">
 				<button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click();">Upload File</button>
-				<input type="submit" style="display:none;">
 			</form>
+			<script>
+				// Auto-submit form when file is selected
+				document.getElementById('fileInput').addEventListener('change', function() {
+					if (this.files.length > 0) {
+						document.getElementById('uploadForm').submit();
+					}
+				});
+			</script>
 		</div>
 	</body>
 	</body>
