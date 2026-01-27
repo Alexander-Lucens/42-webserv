@@ -13,7 +13,7 @@ std::string ConfigParser::trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
-void ConfigParser::removeSemicolon(std::string &str) {
+void ConfigParser::remove_semicolon(std::string &str) {
     if (!str.empty() && str[str.size() - 1] == ';') {
         str.resize(str.size() - 1);
     }
@@ -33,7 +33,7 @@ std::vector<ServerConfig> ConfigParser::parse(const std::string &config_path) {
         if (line.empty() || line[0] == '#') continue;
 
         if (line == "server {") {
-            parseServerBlock(file);
+            parse_server_block(file);
         } else {
             throw std::runtime_error("Error: Unknown directive outside server block: " + line);
         }
@@ -42,7 +42,7 @@ std::vector<ServerConfig> ConfigParser::parse(const std::string &config_path) {
     return _servers;
 }
 
-void ConfigParser::parseServerBlock(std::ifstream &file) {
+void ConfigParser::parse_server_block(std::ifstream &file) {
     ServerConfig server;
     std::string line;
 
@@ -64,23 +64,23 @@ void ConfigParser::parseServerBlock(std::ifstream &file) {
         }
         else if (key == "host") {
             ss >> server.host;
-            removeSemicolon(server.host);
+            remove_semicolon(server.host);
         }
         else if (key == "server_name") {
             std::string name;
             while (ss >> name) {
-                removeSemicolon(name);
+                remove_semicolon(name);
                 server.server_names.push_back(name);
             }
         }
         else if (key == "root") {
             ss >> server.root;
-            removeSemicolon(server.root);
+            remove_semicolon(server.root);
         }
         else if (key == "index") {
             std::string idx;
             while (ss >> idx) {
-                removeSemicolon(idx);
+                remove_semicolon(idx);
                 server.index.push_back(idx);
             }
         }
@@ -88,7 +88,7 @@ void ConfigParser::parseServerBlock(std::ifstream &file) {
             int code;
             std::string path;
             ss >> code >> path;
-            removeSemicolon(path);
+            remove_semicolon(path);
             server.error_pages[code] = path;
         }
         else if (key == "client_max_body_size") {
@@ -99,7 +99,7 @@ void ConfigParser::parseServerBlock(std::ifstream &file) {
             std::string path;
             ss >> path;
             
-            LocationConfig loc = parseLocationBlock(file, path);
+            LocationConfig loc = parse_location_block(file, path);
             server.locations[path] = loc;
         }
         else {
@@ -109,7 +109,7 @@ void ConfigParser::parseServerBlock(std::ifstream &file) {
     throw std::runtime_error("Error: Unexpected end of file inside server block");
 }
 
-LocationConfig ConfigParser::parseLocationBlock(std::ifstream &file, std::string path) {
+LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path) {
     LocationConfig loc;
     loc.path = path;
     std::string line;
@@ -128,31 +128,31 @@ LocationConfig ConfigParser::parseLocationBlock(std::ifstream &file, std::string
 
         if (key == "root") {
             ss >> loc.root;
-            removeSemicolon(loc.root);
+            remove_semicolon(loc.root);
         }
         else if (key == "index") {
             std::string idx;
             while (ss >> idx) {
-                removeSemicolon(idx);
+                remove_semicolon(idx);
                 loc.index.push_back(idx);
             }
         }
         else if (key == "methods") {
             std::string method;
             while (ss >> method) {
-                removeSemicolon(method);
+                remove_semicolon(method);
                 loc.methods.push_back(method);
             }
         }
         else if (key == "autoindex") {
             std::string val;
             ss >> val;
-            removeSemicolon(val);
+            remove_semicolon(val);
             loc.autoindex = (val == "on");
         }
         else if (key == "cgi_pass") {
             ss >> loc.cgi_ext >> loc.cgi_path;
-            removeSemicolon(loc.cgi_path);
+            remove_semicolon(loc.cgi_path);
         }
     }
     throw std::runtime_error("Error: Unexpected end of file inside location block");

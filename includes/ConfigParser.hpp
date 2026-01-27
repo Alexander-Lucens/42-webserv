@@ -12,11 +12,11 @@ class ConfigParser {
     private:
         std::vector<ServerConfig>   _servers;
 
-        void parseServerBlock(std::ifstream &file);
-        LocationConfig parseLocationBlock(std::ifstream &file, std::string path);
+        LocationConfig  parse_location_block(std::ifstream &file, std::string path);
+        std::string     trim(const std::string& str);
+        void            remove_semicolon(std::string &str);
+        void            parse_server_block(std::ifstream &file);
 
-        std::string trim(const std::string& str);
-        void removeSemicolon(std::string &str);
 
     public:
         ConfigParser();
