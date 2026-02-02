@@ -11,6 +11,7 @@ class Socket {
 	public:
 		/* ----- OCF ----- */
 		Socket();
+		Socket(int fd);
 		~Socket();
 		Socket(const Socket &other);
 		Socket &operator=(const Socket &other);

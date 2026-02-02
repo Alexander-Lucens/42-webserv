@@ -6,6 +6,9 @@
 #include <algorithm>
 
 Connection::Connection() {}
+
+Connection::Connection(int fd): socket(fd) {}
+
 Connection::~Connection() {}
 
 const std::string& Connection::get_read_buffer() const {
@@ -31,12 +34,6 @@ void Connection::on_readable() {
     }
     return; // no data currently left to read, come back later
 }
-
-
-// void Connection::on_writable() {}
-
-// void Connection::on_error() {}
-
 
 bool Connection::parse_request_line() {
     std::string::size_type start_pos = 0;
@@ -159,7 +156,9 @@ void Connection::scan_buffer() {
                 this->request.state = Request::DONE;
         }
         case Request::DONE: {
-            
+            this->request.execute();
+            this->clean_buffer_for_new_request();
+            this->request.reset();
             break;
         }
         case Request::ERROR: {
@@ -167,4 +166,22 @@ void Connection::scan_buffer() {
             break;
         }
     }
+}
+
+void Connection::clean_buffer_for_new_request() {
+    std::string::size_type start_pos;
+
+    start_pos = this->read_buffer.find("\r\n\r\n");
+    if (start_pos == std::string::npos)
+        return; // error in buffer
+    start_pos += 4;
+
+    if (this->request.headers.count("content-length"))
+    {
+        std::size_t content_length = static_cast<std::size_t>
+            (std::strtoul(this->request.headers["content-length"].c_str(), NULL, 10));
+        start_pos += content_length;
+
+    }
+    read_buffer.erase(0, start_pos);
 }

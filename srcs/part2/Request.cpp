@@ -21,3 +21,18 @@ std::string Request::toString() const {
 
 }
 
+void Request::reset() {
+    method.clear();
+    uri.clear();
+    path.clear();
+    version.clear();
+    headers.clear();
+    body.clear();
+    query_string.clear();
+
+    state = RequestState::REQUEST_LINE;
+}
+
+void execute() {
+    // whatever extra information you need
+}
