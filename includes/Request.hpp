@@ -50,10 +50,8 @@ class Request {
 		/* ------------- */
 
 		void clear();
-
 		std::string getHeader(const std::string &key) const;
 		void setHeader(const std::string &key, const std::string &value);
 		std::string toString() const;
-		void reset();
 		void execute();
 };

@@ -158,11 +158,12 @@ void Connection::scan_buffer() {
         case Request::DONE: {
             this->request.execute();
             this->clean_buffer_for_new_request();
-            this->request.reset();
+            this->request.clear();
             break;
         }
         case Request::ERROR: {
-            // code block
+            // send_error_response();
+            // close_connection();
             break;
         }
     }

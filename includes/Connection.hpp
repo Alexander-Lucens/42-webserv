@@ -19,7 +19,6 @@ class Connection {
 		std::string				write_buffer;
 		int						current_read_index;
 		Request					request;
-		// std::vector<Request>	requests;
 
 	public:
 		Connection();
