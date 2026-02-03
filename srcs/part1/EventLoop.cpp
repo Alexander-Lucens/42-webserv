@@ -96,15 +96,15 @@ void EventLoop::run() {
                 if (_connections.find(current_fd) != _connections.end()) {
                     Connection* conn = _connections[current_fd];
                     
-                    // if (events[i].events & EPOLLIN) conn->handleRead();
+                    if (events[i].events & EPOLLIN) conn->on_readable();
                     // if (events[i].events & EPOLLOUT) conn->handleWrite();
                     
                     // TMP to avoid -Werror and show that its works
-                    (void)conn;
-					std::cout << "Connection details:"
-						<< "\n -> FD: " << conn->socket.getFd() \
-						<< "\n -> Read Buffer Size: " << conn->read_buffer.size() \
-						<< "\n -> Write Buffer Size: " << conn->write_buffer.size() << std::endl;
+                    // (void)conn;
+					// std::cout << "Connection details:"
+					// 	<< "\n -> FD: " << conn->socket.getFd() \
+					// 	<< "\n -> Read Buffer Size: " << conn->read_buffer.size() \
+					// 	<< "\n -> Write Buffer Size: " << conn->write_buffer.size() << std::endl;
                 }
             }
         }

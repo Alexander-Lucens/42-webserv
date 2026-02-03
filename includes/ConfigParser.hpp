@@ -10,6 +10,8 @@
 
 class ConfigParser {
     private:
+        ConfigParser();
+        ConfigParser(const ConfigParser &other);
         std::vector<ServerConfig>   _servers;
 
         LocationConfig  parse_location_block(std::ifstream &file, std::string path);
@@ -19,8 +21,10 @@ class ConfigParser {
 
 
     public:
-        ConfigParser();
         ~ConfigParser();
 
+        static ConfigParser &getInstance();
         std::vector<ServerConfig> parse(const std::string &config_path);
+        const std::vector<ServerConfig> &getServers() const;
+        const ServerConfig &getId(int order) const;
 };

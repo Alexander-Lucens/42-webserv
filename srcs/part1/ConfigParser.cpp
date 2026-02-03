@@ -5,6 +5,19 @@
 ConfigParser::ConfigParser() {}
 ConfigParser::~ConfigParser() {}
 
+ConfigParser &ConfigParser::getInstance() {
+    static ConfigParser instance;
+    return instance;
+}
+
+const std::vector<ServerConfig> &ConfigParser::getServers() const {
+    return _servers;
+}
+
+const ServerConfig &ConfigParser::getId(int order) const {
+    return _servers.at(order);
+}
+
 /* ----- Utils ----- */
 std::string ConfigParser::trim(const std::string& str) {
     size_t first = str.find_first_not_of(" \t");
@@ -22,6 +35,7 @@ void ConfigParser::remove_semicolon(std::string &str) {
 /* ----- Logic ----- */
 
 std::vector<ServerConfig> ConfigParser::parse(const std::string &config_path) {
+    _servers.clear();
     std::ifstream file(config_path.c_str());
     if (!file.is_open()) {
         throw std::runtime_error("Error: Could not open config file: " + config_path);
