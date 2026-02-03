@@ -1,4 +1,3 @@
-#pragma once
 
 #include "Connection.hpp"
 #include <cctype>
@@ -151,6 +150,7 @@ int Connection::scan_buffer() {
                 this->request.state = Request::ERROR;
                 return (CONTINUE);
             }
+			return (CONTINUE);
         }
         case Request::REQUEST_HEADERS: {
             result = parse_request_headers();
@@ -164,6 +164,7 @@ int Connection::scan_buffer() {
                 this->request.state = Request::ERROR;
                 return (CONTINUE);
             }
+			return (CONTINUE);
         }
         case Request::REQUEST_BODY: {
             if (this->request.headers.count("content-length")) {
@@ -183,6 +184,7 @@ int Connection::scan_buffer() {
                 this->request.state = Request::DONE;
                 return (CONTINUE);
             }
+			return (CONTINUE);
         }
         case Request::DONE: {
             this->request.execute();
@@ -196,6 +198,7 @@ int Connection::scan_buffer() {
             return (STOP);
         }
     }
+	return (CONTINUE);
 }
 
 void Connection::clean_buffer_for_new_request() {

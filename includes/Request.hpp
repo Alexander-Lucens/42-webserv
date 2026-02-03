@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+class Response;
+
 /**
  * @brief Class for handling HTTP requests
  * @method GET, POST, DELETE, etc.
@@ -45,8 +47,8 @@ class Request {
 		/* ----- OCF ----- */
 		Request();
 		~Request();
-		// Request(const Request &other);
-		// Request& operator=(const Request &other);
+		Request(const Request &other);
+		Request& operator=(const Request &other);
 		/* ------------- */
 
 		void clear();

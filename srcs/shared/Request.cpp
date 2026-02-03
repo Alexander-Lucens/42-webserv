@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include "Response.hpp"
 
 Request::Request(const Request &other) 
     : method(other.method), uri(other.uri),  version(other.version), 
@@ -37,31 +38,19 @@ void Request::setHeader(const std::string &key, const std::string &value) {
 	headers[key] = value;
 }
 
-std::string Request::toString() const {
-	std::ostringstream requestStream;
-
-	std::string pathSTR = !path.empty() ? path : !uri.empty() ? uri.substr(0, uri.find('?')) : "/";
-	
-	requestStream << method << " " << pathSTR << " " << version << "\r\n";
-	
-	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		requestStream << it->first << ": " << it->second << "\r\n";
-	}
-	requestStream << "\r\n" << body;
-	return requestStream.str();
-}
-
 void Request::clear() {
 	method.clear();
 	uri.clear();
 	path.clear();
-	version = "HTTP/1.1";
+	version.clear();
 	headers.clear();
 	body.clear();
 	query_string.clear();
 	state = REQUEST_LINE;
 }
 
-void execute() {
-    // whatever extra information you need
+void Request::execute() {
+    Response response;
+    std::cout << "HI" << std::endl;
+	response.handle_request(*this);
 }

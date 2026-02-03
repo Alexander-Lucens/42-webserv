@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "Response.hpp"
+#include "Request.hpp"
 
 bool testSocket() {
     try {
