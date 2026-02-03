@@ -9,10 +9,13 @@
 #include <ctime>
 #include <sstream>
 #include <fstream>
+#include <vector>
 #include <dirent.h>
 #include <unistd.h>
+#include <algorithm>
 #include "Request.hpp"
 #include "FileHandler.hpp"
+#include "Utils.hpp"
 
 
 #define NEW_LINE		"\r\n"
@@ -45,12 +48,10 @@ class Response {
 		std::map<std::string, std::string> _headers;
 
 		// Helper 
-		std::string			get_http_date();
 		std::string			reason_message(int code);
-		std::string			get_filename_from_multipart(const std::string &body);
-		std::string			get_file_content(const std::string &body, const std::string &boundary);
 		Response 			response_body(const int &error_code, const std::string &body);
-		std::string			normalize_path(const std::string& path);
+		Response			handle_post_submit(const Request& request);
+		Response			handle_post_upload(const Request& request);
 
 
 	public:
@@ -66,7 +67,8 @@ class Response {
 		// Requests
 		Response 		handle_get(const Request &request);
 		Response 		handle_post(const Request &request);
-		Response 		handle_delete(const Request &request);
+		Response		handle_delete(const Request &request);
+
 		Response 		handle_error(const int error_code);
 		Response 		handle_request(const Request &request);
 
