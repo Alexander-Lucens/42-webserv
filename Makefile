@@ -19,12 +19,12 @@ INCLUDE     := includes
 
 SRC_DIR		:= srcs
 
-SRCS        :=  $(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp $(SRC_DIR)/shared/FileHandler.cpp \
-				$(SRC_DIR)/part1/Socket.cpp \
-				tests/test_request.cpp tests/test_socket.cpp tests/test_response.cpp\
-				
-TEST_SRCS	:= tests/test_response.cpp \
+SRCS        :=  $(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp \
+				$(SRC_DIR)/part1/Socket.cpp $(SRC_DIR)/part1/EventLoop.cpp\
+				tests/test_eventloop.cpp \
+# 				$(SRC_DIR)/main.cpp
+
+TEST_SRCS	:= tests/test_request.cpp tests/test_socket.cpp tests/test_response.cpp \
 				srcs/Response.cpp 
 
 # **************************************************************************** #

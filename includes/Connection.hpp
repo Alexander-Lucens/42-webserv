@@ -5,18 +5,19 @@
 #include <map>
 #include <iostream>
 #include <sstream>
-
+#include "Socket.hpp"
 #include "Request.hpp"
 
 
 class Connection {
 	public:
-		std::string socket;
+		Socket		socket;
 		std::string read_buffer;
 		std::string write_buffer;
 		Request		request;
 
 		Connection();
+		Connection(int fd);
 		~Connection();
 		Connection(const Connection &other);
 		Connection& operator=(const Connection &other);
