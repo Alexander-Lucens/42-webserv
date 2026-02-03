@@ -1,7 +1,8 @@
 #include "EventLoop.hpp"
 
+
 // TMP implementation of Connection class just to make it work for now
-Connection::Connection() : socket(), read_buffer(""), write_buffer(""), request() {}
+/* Connection::Connection() : socket(), read_buffer(""), write_buffer(""), request() {}
 Connection::Connection(int fd) : socket(fd), read_buffer(""), write_buffer(""), request() {}
 Connection::~Connection() {}
 Connection::Connection(const Connection &other) : socket(other.socket), read_buffer(other.read_buffer), write_buffer(other.write_buffer), request(other.request) {}
@@ -13,7 +14,7 @@ Connection& Connection::operator=(const Connection &other) {
 		request = other.request;
 	}
 	return *this;
-}
+} */
 // -----------------------------
 
 /* ----- OCF ----- */
@@ -96,8 +97,9 @@ void EventLoop::run() {
                 if (_connections.find(current_fd) != _connections.end()) {
                     Connection* conn = _connections[current_fd];
                     
-                    if (events[i].events & EPOLLIN) conn->on_readable();
-                    // if (events[i].events & EPOLLOUT) conn->handleWrite();
+					std::cout << "IN ELSE" << std::endl;
+                    conn->on_readable();
+                  /*   // if (events[i].events & EPOLLOUT) conn->handleWrite();
                     
                     // TMP to avoid -Werror and show that its works
                     // (void)conn;
@@ -105,7 +107,8 @@ void EventLoop::run() {
 					// 	<< "\n -> FD: " << conn->socket.getFd() \
 					// 	<< "\n -> Read Buffer Size: " << conn->read_buffer.size() \
 					// 	<< "\n -> Write Buffer Size: " << conn->write_buffer.size() << std::endl;
-                }
+					*/
+                } 
             }
         }
     }

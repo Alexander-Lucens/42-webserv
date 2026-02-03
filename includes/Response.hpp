@@ -13,7 +13,6 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <algorithm>
-#include "Request.hpp"
 #include "FileHandler.hpp"
 #include "Utils.hpp"
 
@@ -23,7 +22,7 @@
 #define SERVER			"webserv/1.0"
 #define MAX_FILE_SIZE	(5 * 1024 * 1024) 
 
-
+class Request; 
 
 /**
  * @brief Represents an HTTP response.

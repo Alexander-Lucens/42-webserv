@@ -1,5 +1,7 @@
 
 # include "FileHandler.hpp"
+#include "Response.hpp"
+#include "Request.hpp"
 
 bool FileHandler::is_directory(const std::string &file_path)
 {

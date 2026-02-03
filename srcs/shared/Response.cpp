@@ -1,5 +1,6 @@
 # include "Response.hpp"
 # include "Request.hpp"
+#include "ConfigParser.hpp"
 
 /* 
 HttpRequest (from parser)
@@ -254,8 +255,8 @@ std::string Response::serialize()
 
 	http_response << NEW_LINE;
 	http_response << this->_html_body;
-	return http_response.str();
-}
+	return http_response.str(); // send_response_to_socket(http_response.str();
+} 
 
 /* Matches error code and returns error message  */
 std::string Response::reason_message(int code)

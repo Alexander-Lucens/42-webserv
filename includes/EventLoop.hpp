@@ -7,6 +7,8 @@
 #include "Socket.hpp"
 #include "Connection.hpp"
 
+class Connection;
+
 class EventLoop {
 	private:
 		int _epoll_fd;

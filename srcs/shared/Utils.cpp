@@ -1,4 +1,5 @@
 #include "Utils.hpp"
+#include "ConfigParser.hpp"
 
 /* Returns current time and date */
 std::string Utils::get_http_date() 
@@ -20,7 +21,7 @@ std::string Utils::normalize_path(const std::string &path)
 		normalized = normalized.substr(0, query_start);
 
 	if (normalized.empty() || normalized == "/")
-		normalized = "/index.html";
+		normalized = ConfigParser::getInstance().getId(0).index[0];
 
 	return normalized;
 }
