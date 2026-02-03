@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
+#    By: akuzmin <akuzmin@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/01/26 14:24:34 by lkramer          ###   ########.fr        #
+#    Updated: 2026/02/03 14:02:46 by akuzmin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,7 +20,7 @@ INCLUDE     := includes
 SRC_DIR		:= srcs
 
 SRCS        :=  $(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp $(SRC_DIR)/shared/FileHandler.cpp \
+				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp $(SRC_DIR)/shared/FileHandler.cpp $(SRC_DIR)/shared/Utils.cpp \
 				$(SRC_DIR)/part1/Socket.cpp \
 				tests/test_request.cpp tests/test_socket.cpp tests/test_response.cpp\
 				

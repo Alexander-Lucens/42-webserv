@@ -2,17 +2,26 @@
 #pragma once
 
 #include <string>
+#include <cstring>
 #include <iostream>
+#include <cstdlib>
 #include <map>
 #include <ctime>
 #include <sstream>
 #include <fstream>
+#include <vector>
+#include <dirent.h>
+#include <unistd.h>
+#include <algorithm>
 #include "Request.hpp"
+#include "FileHandler.hpp"
+#include "Utils.hpp"
 
 
 #define NEW_LINE		"\r\n"
 #define BLANK_LINE		"\r\n\r\n"
 #define SERVER			"webserv/1.0"
+#define MAX_FILE_SIZE	(5 * 1024 * 1024) 
 
 
 
@@ -38,8 +47,15 @@ class Response {
 		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
 		std::map<std::string, std::string> _headers;
 
+		// Helper 
+		std::string			reason_message(int code);
+		Response 			response_body(const int &error_code, const std::string &body);
+		Response			handle_post_submit(const Request& request);
+		Response			handle_post_upload(const Request& request);
+
+
 	public:
-		
+		std::string version; 
 
 		/* ----- OCF ----- */
 		Response();
@@ -49,24 +65,20 @@ class Response {
 		/* ------------- */
 
 		// Requests
-		Response handle_get(const Request& request);
-		Response handle_post(const Request& request);
-		Response handle_delete(const Request& request);
-		Response handle_error(const int error_code);
-		Response handle_request(const Request &request);
+		Response 		handle_get(const Request &request);
+		Response 		handle_post(const Request &request);
+		Response		handle_delete(const Request &request);
+
+		Response 		handle_error(const int error_code);
+		Response 		handle_request(const Request &request);
 
 		// Setter
-		void set_status(int status_code);
-		void set_header(const std::string &key, const std::string &value);
-		void set_body(const std::string &html_body);
+		void 			set_status(int status_code);
+		void 			set_header(const std::string &key, const std::string &value);
+		void 			set_body(const std::string &html_body);
 
 		// Serializer 
 		std::string serialize();
 
-
-		// Helper 
-		std::string getHttpDate();
-		std::string toString();
-		std::string reason_message(int code);
 
 };
