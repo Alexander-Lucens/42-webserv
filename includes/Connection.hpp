@@ -36,4 +36,5 @@ class Connection {
 
 		void clean_buffer_for_new_request();
 		void send_error_response();
+		void close_connection();
 };

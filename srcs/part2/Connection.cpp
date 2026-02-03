@@ -110,7 +110,7 @@ int Connection::parse_request_headers() {
             
         std::string value = headers_block.substr(start_pos, end_pos - start_pos);
 
-        this->request.headers[key] = value;
+        this->request.setHeader(key, value);
         start_pos = end_pos + 2;
     }
 
@@ -137,6 +137,10 @@ int Connection::parse_request_body() {
 
 void Connection::send_error_response() {
     // send back error 400
+}
+
+void Connection::close_connection() {
+    // completely close the connection and delete the Connection object
 }
 
 
@@ -197,10 +201,8 @@ int Connection::scan_buffer() {
         }
         case Request::ERROR: {
             send_error_response();
-            this->clean_buffer_for_new_request();
-            this->request.clear();
-            this->request.state = Request::REQUEST_LINE;
-            return (CONTINUE);
+            close_connection();
+            return (STOP);
         }
     }
 }
@@ -209,8 +211,6 @@ void Connection::clean_buffer_for_new_request() {
     std::string::size_type start_pos;
 
     start_pos = this->read_buffer.find("\r\n\r\n");
-    if (start_pos == std::string::npos)
-        return; // error in buffer
     start_pos += 4;
 
     if (this->request.headers.count("content-length"))
