@@ -29,10 +29,11 @@ class Connection {
 
 		void on_readable();
 
-		void scan_buffer();
-		bool parse_request_line();
-		bool parse_request_headers();
-		bool parse_request_body();
+		int scan_buffer();
+		int parse_request_line();
+		int parse_request_headers();
+		int parse_request_body();
 
 		void clean_buffer_for_new_request();
+		void send_error_response();
 };
