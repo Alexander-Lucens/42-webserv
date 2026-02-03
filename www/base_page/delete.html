@@ -1,0 +1,73 @@
+	<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>webserv - Delete</title>
+	<link rel="stylesheet" href="style.css">
+	<script>
+		function loadFiles() {
+			fetch("/uploads/")
+			.then(response => response.text())
+			.then(html => {
+				const fileList = document.getElementById("fileList");
+				fileList.innerHTML = html;
+			})
+			.catch(error => {
+				console.error("Error loading files:", error);
+			});
+		}
+		function deleteFile() {
+		const filename = document.getElementById("filename").value;
+		if (!filename) {
+			alert("Please enter a filename");
+			return;
+		}
+
+		fetch("/uploads/" + filename, {
+			method: "DELETE"
+		})
+		.then(response => {
+			if (response.ok) {
+				alert("File deleted successfully");
+				loadFiles();
+				document.getElementById("filename").value = "";
+			} else {
+				alert("Error deleting file: " + response.status);
+			}
+		})
+		.catch(error => {
+			alert("Error: " + error);
+		});
+		}
+		window.onload = loadFiles;
+	</script>
+</head>
+<body>
+	<h1>Delete Files</h1>
+	<p>View and delete files from the server</p>
+	
+	<div class="form-container">
+		        <div id="fileList" style="margin: 15px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-height: 100px;">
+			Loading files...
+		</div>
+		<p><strong>Note:</strong> Enter the filename to delete it</p>
+		
+		<div style="margin: 20px 0;">
+			<div style="margin: 30px 0;">
+				<input type="text" name="filename" id="filename" placeholder="e.g., test.txt" required>
+			</div>
+			<button type="button" class="delete-btn" onclick="deleteFile()">Delete File</button>
+		</div>
+	</div>
+	
+	<div style="margin-top: 20px;">
+		<a href="/index.html"><button type="button" class="back-btn">Back to Home</button></a>
+	</div>
+	
+	<footer>
+		<p>&copy; 2026 webserv | Developed by Aleksandr Kuzmin | Antoine Margoloff | Lara Krämer</p>
+	</footer>
+</body>
+</html>
