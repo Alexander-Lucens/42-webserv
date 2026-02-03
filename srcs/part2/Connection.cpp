@@ -29,7 +29,8 @@ void Connection::on_readable() {
 	}
 
     if (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-        send_error_response();
+        this->request.state = Request::ERROR;
+        scan_buffer(); // one last time to execute the bad request via an error 400 response and close the connection
         return;
     }
 
@@ -135,15 +136,6 @@ int Connection::parse_request_body() {
     return (PARSE_OK);
 }
 
-void Connection::send_error_response() {
-    // send back error 400
-}
-
-void Connection::close_connection() {
-    // completely close the connection and delete the Connection object
-}
-
-
 int Connection::scan_buffer() {
     int result;
     switch(this->request.state) {
@@ -200,8 +192,7 @@ int Connection::scan_buffer() {
             return (CONTINUE);
         }
         case Request::ERROR: {
-            send_error_response();
-            close_connection();
+            this->request.execute();
             return (STOP);
         }
     }

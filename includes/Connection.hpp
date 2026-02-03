@@ -28,13 +28,10 @@ class Connection {
 		const std::string& get_read_buffer() const;
 
 		void on_readable();
+		void clean_buffer_for_new_request();
 
 		int scan_buffer();
 		int parse_request_line();
 		int parse_request_headers();
 		int parse_request_body();
-
-		void clean_buffer_for_new_request();
-		void send_error_response();
-		void close_connection();
 };
