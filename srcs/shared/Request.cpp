@@ -61,3 +61,7 @@ void Request::clear() {
 	query_string.clear();
 	state = REQUEST_LINE;
 }
+
+void execute() {
+    // whatever extra information you need
+}

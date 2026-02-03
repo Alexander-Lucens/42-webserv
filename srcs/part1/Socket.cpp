@@ -10,7 +10,7 @@ Socket::Socket() : _fd(-1) {
 	std::memset(&_address, 0, sizeof(_address));
 }
 
-Socket::Socket(int existing_fd) : _fd(existing_fd) {
+Socket::Socket(int fd) : _fd(fd) {
 	std::memset(&_address, 0, sizeof(_address));
 }
 

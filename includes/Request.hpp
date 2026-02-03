@@ -45,13 +45,13 @@ class Request {
 		/* ----- OCF ----- */
 		Request();
 		~Request();
-		Request(const Request &other);
-		Request& operator=(const Request &other);
+		// Request(const Request &other);
+		// Request& operator=(const Request &other);
 		/* ------------- */
 
 		void clear();
-
 		std::string getHeader(const std::string &key) const;
 		void setHeader(const std::string &key, const std::string &value);
 		std::string toString() const;
+		void execute();
 };
