@@ -6,6 +6,8 @@
 /**
  * to test fast:
  * c++ -Wall -Wextra -Werror -std=c++98 -Iincludes srcs/part1/ConfigParser.cpp srcs/main.cpp  && ./a.out
+ * 
+ * Currently doing nothing but just for usage
  */
 int main(int ac, char **av) {
     try {
