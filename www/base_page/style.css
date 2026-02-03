@@ -1,14 +1,23 @@
 body {
+	  display: block;
 	font-family: Arial, sans-serif;
 	margin: 0;
 	padding: 20px;
-	background-color: #5b57579a;
+	background-color: #0a0a0a;
 	text-align: center;
 	
 }
 
-h1, p {
-	color: #f7f2f2;
+footer {
+	margin-top: 50px;
+	padding-top: 20px;
+	border-top: 1px solid #ccc;
+	text-align: center;
+	color: #e4c4c4;
+}
+
+h1, p , h2{
+	color: #13d019;
 }
 
 .button-container {
@@ -28,7 +37,9 @@ h1, p {
 	font-size: 50px;
 }
 
-
+.upload_p {
+	color: #fcfafa;
+}
 
 button {
 	padding: 10px 20px;
@@ -75,10 +86,6 @@ button {
 	background-color: #FF2DD2;
 }
 
-footer {
-	margin-top: 50px;
-	padding-top: 20px;
-	border-top: 1px solid #ccc;
-	text-align: center;
-	color: #f3efef;
+#fileList {
+    display: block;
 }
