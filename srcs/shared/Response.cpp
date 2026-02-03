@@ -58,17 +58,44 @@ void Response::set_header(const std::string &key, const std::string &value)
 	_headers[key] = value;
 }
 
+
+/* Filters request type and requested function  */
+Response Response::handle_request(const Request &request)
+{
+	if (request.method == "GET")
+		return (handle_get(request));
+	if (request.method == "POST")
+		return (handle_post(request));
+	if (request.method == "DELETE")
+		return (handle_delete(request));
+	return (handle_error(501));
+}
+
 Response Response::handle_get(const Request& request)
 {
 	Response response;
 
-	std::string normalized_html_path = normalize_path(request.path);
-	std::string file_path = "www/base_page" + normalized_html_path; // get dir through config later
+	std::string normalized_html_path = Utils::normalize_path(request.path);
+	std::string file_path;
+
+	// Route /uploads/ to uploads directory
+	if (request.path.find("/uploads") == 0) 
+		file_path = "www" + request.path;
+	else
+		file_path = "www/base_page" + normalized_html_path;
 
 	if (!FileHandler::file_exists(file_path))
 		return handle_error(404);
-	/* if (FileHandler::is_directory(file_path))
-		return handle_error(405);  */// I need to add logic for : handle_autoindex(file_path)
+
+	// If it's a directory, list files
+    if (FileHandler::is_directory(file_path))
+	{
+		std::string autoindex_html = FileHandler::handle_autoindex(request, file_path);
+		if (autoindex_html.empty())
+			return handle_error(403); // autoindex disabled in config
+		return response_body(200, autoindex_html);
+	}
+
 	if (!FileHandler::is_readable(file_path))
 		return handle_error(403);
 
@@ -77,7 +104,7 @@ Response Response::handle_get(const Request& request)
 		return (handle_error(404)); 
 
 	response.set_status(200);
-	response.set_header("Date", get_http_date());
+	response.set_header("Date", Utils::get_http_date());
 	response.set_header("Server", SERVER);
 	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
 	response.set_body(html_content);
@@ -87,69 +114,84 @@ Response Response::handle_get(const Request& request)
 
 Response Response::handle_post(const Request& request)
 {
-	Response response;
+	if (!FileHandler::validate_content_length(request))
+		return handle_error(400);
 
-	// Validate request 
-	std::string content_length_val = request.getHeader("Content-Length");
-	if (content_length_val.empty() || request.body.empty())
-		return(handle_error(400));
-	
-	int content_len = std::atoi(content_length_val.c_str());
-	if ((int)request.body.length() != content_len)
-		return (handle_error(400));
 	if (request.path == "/submit")
-    {
-        std::string body = "<h1>200 OK</h1><p>Form data received: " + request.body + "</p>";
-        return (response_body(200, body));
-    }
-	else if (request.path == "/upload")
-	{
-		std::string content_type = request.getHeader("Content-Type");
-		std::string boundary;
+		return handle_post_submit(request);
 
-		size_t boundary_pos = content_type.find("boundary=");
-		if (boundary_pos != std::string::npos) {
-			boundary = content_type.substr(boundary_pos + 9);
-			boundary = "--" + boundary;
-		}
-		// Extract filename and file content from multipart body
-		std::string file_name = get_filename_from_multipart(request.body);
-		std::string file_content = get_file_content(request.body, boundary);
+	if (request.path == "/upload")
+		return handle_post_upload(request);
 
-		if (file_content.empty())
-			return (handle_error(400));
+	return handle_error(405);
+}
 
-		// Save uploaded file
-		std::string upload_file_path = "www/uploads/" + file_name;
-		std::ofstream outfile(upload_file_path.c_str(), std::ios::binary);
-		if (!outfile.is_open())
-			return (handle_error(500));
+Response Response::handle_post_submit(const Request& request)
+{
+	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
+		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
+		+ std::string("div { text-align: center; }")
+		+ std::string("h1 { color: #13d019; }")
+		+ std::string("</style></head><body><div><h1>200 Form data received</h1><p>File '") + request.body + std::string("' uploaded successfully</p></div></body></html>");
 
-		outfile.write(file_content.c_str(), file_content.length());
-		outfile.close();
+	return response_body(200, body);
+}
 
-		std::string upload_body = "<h1>201 Created</h1><p>File '" + file_name + "' uploaded successfully</p>";
-		response = response_body(201, upload_body);
-		response.set_header("Location", "/uploads/" + file_name);
-		return (response);
-	}
-	return (handle_error(405));
+Response Response::handle_post_upload(const Request& request)
+{
+	std::string content_type = request.getHeader("Content-Type");
+	std::cout << "DEBUG: Content-Type = [" << content_type << "]" << std::endl;
+
+	std::string boundary = Utils::extract_boundary(content_type);
+	std::cout << "DEBUG: extracted boundary = [" << boundary << "]" << std::endl;
+
+	if (boundary.empty())
+		return handle_error(400);
+
+	std::string file_name = FileHandler::get_filename_from_multipart(request.body);
+	std::cout << "DEBUG: file_name = [" << file_name << "]" << std::endl;
+
+	std::string file_content = FileHandler::get_file_content(request.body, boundary);
+	std::cout << "DEBUG: file_content length = [" << file_content.length() << "]" << std::endl;
+
+	if (file_content.empty())
+		return handle_error(400);
+
+	if (!FileHandler::save_uploaded_file("www/uploads/" + file_name, file_content))
+		return handle_error(500);
+
+	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
+		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
+		+ std::string("div { text-align: center; }")
+		+ std::string("h1 { color: #13d019; }")
+		+ std::string("</style></head><body><div><h1>200 Created</h1><p>File '") + file_name + std::string("' uploaded successfully</p></div></body></html>");
+
+	Response response = response_body(201, body);
+	response.set_header("Location", "/uploads/" + file_name);
+	return response;
 }
 
 Response Response::handle_delete(const Request &request)
 {
-	std::string file_path = "www/base_page" + request.path;
+	/* std::string filename = FileHandler::extract_form_data(request.body, "filename"); */
+	std::string filename = request.path.substr(9);
+	std::cout << "DEBUG: request.body = [" << request.body << "]" << std::endl;
+    std::cout << "DEBUG: extracted filename = [" << filename << "]" << std::endl;
+    if (filename.empty())
+		return handle_error(400);
+		
+	std::string file_path = "www/uploads/" + filename;
 	if (!FileHandler::file_exists(file_path))
 		return (handle_error(404));
+
 	if (std::remove(file_path.c_str()) != 0)
 		return (handle_error(500));
 
-	std::string file_name = request.path;
-	size_t last_slash = file_name.find_last_of("/");
-	if (last_slash != std::string::npos)
-		file_name = file_name.substr(last_slash + 1);
-
-    std::string body = "<h1>200 OK</h1><p>File '" + file_name + "' successfully deleted</p>";
+	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
+	+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
+	+ std::string("div { text-align: center; }")
+	+ std::string("h1 { color: #13d019; }")
+	+ std::string("</style></head><body><div><h1>200 Deleted</h1><p>File '") + filename + std::string("' successfully deleted</p></div></body></html>");
 	return ((response_body(200, body)));
 }
 
@@ -185,31 +227,9 @@ Response Response::handle_error(const int error_code)
 	return ((response_body(error_code, html_error_file)));
 }
 
-/* Filters request type and requested function  */
-Response Response::handle_request(const Request &request)
-{
-	if (request.method == "GET")
-		return (handle_get(request));
-	if (request.method == "POST")
-		return (handle_post(request));
-	if (request.method == "DELETE")
-		return (handle_delete(request));
-	return (handle_error(501));
-	
-}
 
-/* Returns current time and date */
-std::string Response::get_http_date() 
-{
-	std::time_t now = std::time(NULL);
-	std::tm* gmt = std::gmtime(&now);
-
-	char buffer[128];
-	std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-	return (std::string(buffer));
-}
-
-
+/* HELPER FUNCTION */
+/* Sends response to socket (creates one liner) */
 void Response::set_body(const std::string &html_body)
 {
 	_html_body = html_body;
@@ -221,20 +241,20 @@ void Response::set_body(const std::string &html_body)
 /* Sends response to socket (creates one liner) */
 std::string Response::serialize()
 {
-	std::ostringstream out;
-	out << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
+	std::ostringstream http_response;
+	http_response << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
 
 	// write all headers
 	for (std::map<std::string, std::string>::const_iterator map_item = this->_headers.begin();
-	     map_item != this->_headers.end();
-	     ++map_item)
+			map_item != this->_headers.end();
+			++map_item)
 	{
-		out << map_item->first << ": " << map_item->second << NEW_LINE;
+		http_response << map_item->first << ": " << map_item->second << NEW_LINE;
 	}
 
-	out << NEW_LINE;
-	out << this->_html_body;
-	return out.str();
+	http_response << NEW_LINE;
+	http_response << this->_html_body;
+	return http_response.str();
 }
 
 /* Matches error code and returns error message  */
@@ -257,42 +277,6 @@ std::string Response::reason_message(int code)
 	}
 }
 
-/* Extracts the filename from multipart form-data request body.
-
-Returns extracted filename from filename= field, or uploaded_file as default. */
-std::string Response::get_filename_from_multipart(const std::string &body)
-{
-	std::string filename_marker = "filename=\"";
-	size_t pos = body.find(filename_marker);
-
-	if (pos != std::string::npos) {
-		pos += filename_marker.length();
-		size_t end = body.find("\"", pos);
-		if (end != std::string::npos)
-			return body.substr(pos, end - pos);
-	}
-	return "uploaded_file";
-}
-
-/*  Extracts file content from multipart form-data request body between boundaries. */
-std::string Response::get_file_content(const std::string &body, const std::string &boundary)
-{
-	size_t start = body.find(boundary);
-	if (start == std::string::npos)
-		return "";
-
-	size_t content_start = body.find("\r\n\r\n", start);
-	if (content_start == std::string::npos)
-		return "";
-	content_start += 4;
-
-	// Find end boundary
-	size_t content_end = body.find("\r\n" + boundary, content_start);
-	if (content_end == std::string::npos)
-		return "";
-
-	return body.substr(content_start, content_end - content_start);
-}
 /* Returns response body information */
 Response Response::response_body(const int &error_code, const std::string &body)
 {
@@ -300,33 +284,8 @@ Response Response::response_body(const int &error_code, const std::string &body)
 
 	response.set_status(error_code);
 	response.set_header("Content-Type", "text/html; charset=UTF-8");
-    response.set_header("Date", get_http_date());
+    response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
 	response.set_body(body);
-
 	return (response); 
 }
-
-/* Normalizes request paths by removing query strings and setting default file. */
-std::string Response::normalize_path(const std::string &path)
-{
-    std::string normalized = path;
-    size_t query_start = normalized.find("?");
-    if (query_start != std::string::npos)
-        normalized = normalized.substr(0, query_start);
-    
-    if (normalized.empty() || normalized == "/")
-        normalized = "/index.html";
-    
-    return normalized;
-}
-
-/* Response handle_autoindex(const std::string& path)
-{
-	// Check directory exists and is readable
-	// Generate simple HTML table with files
-	// Include parent directory link
-	// Format file sizes
-	// Set Content-Type header
-	// Return 403 if autoindex is disabled in config
-} */
