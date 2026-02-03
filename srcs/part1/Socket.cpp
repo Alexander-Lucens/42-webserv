@@ -10,6 +10,10 @@ Socket::Socket() : _fd(-1) {
 	std::memset(&_address, 0, sizeof(_address));
 }
 
+Socket::Socket(int existing_fd) : _fd(existing_fd) {
+	std::memset(&_address, 0, sizeof(_address));
+}
+
 Socket::~Socket() {
 	if (_fd != -1) {
 		close(_fd);
