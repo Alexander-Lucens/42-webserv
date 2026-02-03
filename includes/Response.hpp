@@ -4,16 +4,21 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <cstdlib>
 #include <map>
 #include <ctime>
 #include <sstream>
 #include <fstream>
+#include <dirent.h>
+#include <unistd.h>
 #include "Request.hpp"
+#include "FileHandler.hpp"
 
 
 #define NEW_LINE		"\r\n"
 #define BLANK_LINE		"\r\n\r\n"
 #define SERVER			"webserv/1.0"
+#define MAX_FILE_SIZE	(5 * 1024 * 1024) 
 
 
 
@@ -39,6 +44,15 @@ class Response {
 		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
 		std::map<std::string, std::string> _headers;
 
+		// Helper 
+		std::string			get_http_date();
+		std::string			reason_message(int code);
+		std::string			get_filename_from_multipart(const std::string &body);
+		std::string			get_file_content(const std::string &body, const std::string &boundary);
+		Response 			response_body(const int &error_code, const std::string &body);
+		std::string			normalize_path(const std::string& path);
+
+
 	public:
 		std::string version; 
 
@@ -50,24 +64,19 @@ class Response {
 		/* ------------- */
 
 		// Requests
-		Response handle_get(const Request& request);
-		Response handle_post(const Request& request);
-		Response handle_delete(const Request& request);
-		Response handle_error(const int error_code);
-		Response handle_request(const Request &request);
+		Response 		handle_get(const Request &request);
+		Response 		handle_post(const Request &request);
+		Response 		handle_delete(const Request &request);
+		Response 		handle_error(const int error_code);
+		Response 		handle_request(const Request &request);
 
 		// Setter
-		void set_status(int status_code);
-		void set_header(const std::string &key, const std::string &value);
-		void set_body(const std::string &html_body);
+		void 			set_status(int status_code);
+		void 			set_header(const std::string &key, const std::string &value);
+		void 			set_body(const std::string &html_body);
 
 		// Serializer 
 		std::string serialize();
 
-
-		// Helper 
-		std::string getHttpDate();
-		std::string toString();
-		std::string reason_message(int code);
 
 };

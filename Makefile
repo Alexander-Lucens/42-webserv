@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: akuzmin <akuzmin@student.42berlin.de>      +#+  +:+       +#+         #
+#    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/01/25 14:52:05 by akuzmin          ###   ########.fr        #
+#    Updated: 2026/01/26 14:24:34 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
