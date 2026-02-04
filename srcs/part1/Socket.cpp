@@ -31,6 +31,7 @@ Socket &Socket::operator=(const Socket &other) {
 }
 
 void Socket::setup(int port) {
+	_port = port;
 	_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd == -1) {
 		throw std::runtime_error("Failed to create socket");
@@ -61,4 +62,8 @@ void Socket::setup(int port) {
 
 int Socket::getFd() const {
 	return _fd;
+}
+
+int Socket::getPort() const {
+	return _port;
 }

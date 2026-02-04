@@ -34,4 +34,8 @@ class Connection {
 		int parse_request_line();
 		int parse_request_headers();
 		int parse_request_body();
+
+		void set_request_port() {
+			request.port = socket.getPort();
+		}
 };

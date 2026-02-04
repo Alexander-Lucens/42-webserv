@@ -35,6 +35,8 @@ class Request {
 		std::string body;
 		std::string query_string;
 
+		int			port;
+
 		enum RequestState {
 			REQUEST_LINE,
 			REQUEST_HEADERS,

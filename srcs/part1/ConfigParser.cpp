@@ -74,7 +74,11 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
         ss >> key;
 
         if (key == "listen") {
-            ss >> server.port;
+            std::string port;
+            while (ss >> port) {
+                remove_semicolon(port);
+                server.ports.push_back(std::atoi(port.c_str())); // ? do we need to chack that or not but just for now let it be
+            }
         }
         else if (key == "host") {
             ss >> server.host;
