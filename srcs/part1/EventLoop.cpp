@@ -21,26 +21,27 @@ void EventLoop::addSocket(Socket& serverSocket) {
     _serverSockets.push_back(serverSocket);
 }
 
-/* may be deleted in the end */
-// void EventLoop::init() {
-//     int fd = _serverSocket.getFd();
-//     struct epoll_event event;
-//     event.events = EPOLLIN;
-//     event.data.fd = fd;
+void EventLoop::init() {
+    for (size_t i = 0; i < _serverSockets.size(); ++i) {
+        int fd = _serverSockets[i].getFd();
+        struct epoll_event event;
+        event.events = EPOLLIN;
+        event.data.fd = fd;
 
-//     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
-//         throw std::runtime_error("Failed to add server socket to epoll");
-//     }
-// }
+        if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
+            throw std::runtime_error("Failed to add server socket to epoll");
+        }
+        std::cout << GREEN << " [EventLoop] Added Server Socket FD: " << fd << RESET << std::endl;
+    }
+}
 
-// EventLoop::EventLoop(Socket &serverSocket) : _serverSocket(serverSocket) {
-// 	_epoll_fd = epoll_create1(0);
-// 	if (_epoll_fd == -1) {
-// 		throw std::runtime_error("Failed to create epoll file descriptor");
-// 	}
-// 	init();
-// }
-/* ---------------------------------------------------------------------*/
+EventLoop::EventLoop(const std::vector<Socket>& servers) : _serverSocket(serverSocket) {
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd == -1) {
+		throw std::runtime_error("Failed to create epoll file descriptor");
+	}
+	init();
+}
 
 EventLoop::~EventLoop() {
 	for (std::map<int, Connection*>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
@@ -99,8 +100,10 @@ void EventLoop::run() {
                 fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
                 _connections[client_fd] = new Connection(client_fd);
+                _connections[client_fd]->set_request_port();
+
                 struct epoll_event client_event;
-                client_event.events = EPOLLIN | EPOLLET;
+                client_event.events = EPOLLIN | EPOLLOUT | EPOLLET;
                 client_event.data.fd = client_fd;
                 epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &client_event);
 
@@ -108,8 +111,22 @@ void EventLoop::run() {
             } else {
                 if (_connections.find(current_fd) != _connections.end()) {
                     Connection* conn = _connections[current_fd];
-                    std::cout << "Get connection" << std::endl; 
-                    conn->on_readable();
+
+                    if (events[i].events & EPOLLIN) {
+                        if (!conn->on_readable()) {
+                            epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
+                            delete conn;
+                            _connections.erase(current_fd);
+                        }
+                    }
+                    else if (events[i].events & EPOLLOUT) {
+                        // TO DO
+                        if (!conn->on_writable()) {
+                            epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
+                            delete conn;
+                            _connections.erase(current_fd);
+                        } // Implement logic to push data in connection back
+                    }
                 }
             }
         }

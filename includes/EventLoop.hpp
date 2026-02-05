@@ -19,12 +19,12 @@ class EventLoop {
 	public:
 		/* ----- OCF ----- */
 		EventLoop();
-		// EventLoop(Socket& serverSocket);
+		EventLoop(const std::vector<Socket>& servers);
 		~EventLoop();
 		EventLoop& operator=(const EventLoop &other);
 		/* ------------- */
 
 		void addSocket(Socket& serverSocket);
-		// void init();
+		void init();
 		void run();
 };

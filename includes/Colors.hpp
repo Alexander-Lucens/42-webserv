@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef COLORS_HPP
-#define COLORS_HPP
-
 #include <iostream>
 
 #define RESET   "\033[0m"
@@ -42,5 +39,3 @@
 #define INFO(text)		std::cout << BG_CYAN << " Info " << RESET << " " << CYAN << text << RESET << std::endl;
 
 #define SUCCESS(text)		std::cout << BG_GREEN << " Success " << RESET << " " << GREEN << text << RESET << std::endl;
-
-#endif

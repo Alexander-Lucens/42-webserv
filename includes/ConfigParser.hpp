@@ -26,5 +26,4 @@ class ConfigParser {
         static ConfigParser &getInstance();
         std::vector<ServerConfig> parse(const std::string &config_path);
         const std::vector<ServerConfig> &getServers() const;
-        const ServerConfig &getId(int order) const;
-};
+        const ServerConfig &ConfigParser::getConfig(int port, std::string host) const;

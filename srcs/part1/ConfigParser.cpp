@@ -14,7 +14,8 @@ const std::vector<ServerConfig> &ConfigParser::getServers() const {
     return _servers;
 }
 
-const ServerConfig &ConfigParser::getId(int order) const {
+const ServerConfig &ConfigParser::getConfig(int port, std::string host) const {
+    std::vector<ServerConfig> 
     return _servers.at(order);
 }
 
