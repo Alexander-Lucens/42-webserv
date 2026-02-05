@@ -14,9 +14,28 @@ const std::vector<ServerConfig> &ConfigParser::getServers() const {
     return _servers;
 }
 
-const ServerConfig &ConfigParser::getConfig(int port, std::string host) const {
-    std::vector<ServerConfig> 
-    return _servers.at(order);
+const ServerConfig &ConfigParser::getConfig(int port, const std::string &host) const {
+    const ServerConfig* defaultServer = NULL;
+
+    for (size_t i = 0; i < _servers.size(); ++i) {
+        const ServerConfig &curr = _servers[i];
+        bool portMatch = false;
+        for (size_t p = 0; p < curr.ports.size(); ++p) {
+            if (curr.ports[p] == port) {
+                portMatch = true;
+                break;
+            }
+        }
+        if (!portMatch) continue;
+        if (defaultServer == NULL) {
+            defaultServer = &curr;
+        }
+        if (curr.host == host) { 
+            return curr;
+        }
+    }
+    if (defaultServer) return *defaultServer;
+    return _servers[0];
 }
 
 /* ----- Utils ----- */
