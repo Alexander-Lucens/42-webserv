@@ -55,8 +55,10 @@ class Response {
 
 
 	public:
-		ServerConfig _config;
 		std::string version; 
+
+		// _configuration data
+		const ServerConfig* _config;
 
 		/* ----- OCF ----- */
 		Response();

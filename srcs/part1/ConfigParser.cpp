@@ -16,7 +16,6 @@ const std::vector<ServerConfig> &ConfigParser::get_servers() const {
 
 const ServerConfig &ConfigParser::get_config(int port, const std::string &host) const {
     const ServerConfig* defaultServer = NULL;
-
     for (size_t i = 0; i < _servers.size(); ++i) {
         const ServerConfig &curr = _servers[i];
         bool portMatch = false;
@@ -27,14 +26,19 @@ const ServerConfig &ConfigParser::get_config(int port, const std::string &host) 
             }
         }
         if (!portMatch) continue;
+
         if (defaultServer == NULL) {
             defaultServer = &curr;
         }
-        if (curr.host == host) { 
-            return curr;
+        for (size_t n = 0; n < curr.server_names.size(); ++n) {
+            if (curr.server_names[n] == host) {
+                return curr;
+            }
         }
     }
-    if (defaultServer) return *defaultServer;
+    if (defaultServer) {
+        return *defaultServer;
+    }
     return _servers[0];
 }
 
@@ -64,7 +68,9 @@ std::vector<ServerConfig> ConfigParser::parse(const std::string &config_path) {
     std::string line;
     while (std::getline(file, line)) {
         line = trim(line);
-        if (line.empty() || line[0] == '#') continue;
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
 
         if (line == "server {") {
             parse_server_block(file);
@@ -135,9 +141,13 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
         }
         else if (key == "location") {
             std::string path;
-            ss >> path;
-            
-            LocationConfig loc = parse_location_block(file, path);
+            std::string brace;
+            ss >> path >> brace;
+            if (brace != "{") {
+                throw std::runtime_error("Error: Expected '{' after location path");
+            }
+            // Передаем остаток строки в parse_location_block
+            LocationConfig loc = parse_location_block(file, path, ss);
             server.locations[path] = loc;
         }
         else {
@@ -147,11 +157,37 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
     throw std::runtime_error("Error: Unexpected end of file inside server block");
 }
 
-LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path) {
+LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path, std::stringstream &first_line_ss) {
     LocationConfig loc;
     loc.path = path;
     std::string line;
 
+    std::string key;
+    if (first_line_ss >> key) {
+        if (key == "}") {
+            return loc;
+        }
+        if (key == "root") {
+            first_line_ss >> loc.root;
+            remove_semicolon(loc.root);
+        } else if (key == "index") {
+            std::string idx;
+            while (first_line_ss >> idx) { remove_semicolon(idx); loc.index.push_back(idx); }
+        } else if (key == "methods") {
+            std::string method;
+            while (first_line_ss >> method) { remove_semicolon(method); loc.methods.push_back(method); }
+        } else if (key == "autoindex") {
+            std::string val; first_line_ss >> val; remove_semicolon(val); loc.autoindex = (val == "on");
+        } else if (key == "cgi_pass") {
+            first_line_ss >> loc.cgi_ext >> loc.cgi_path; remove_semicolon(loc.cgi_path);
+        }
+        std::string end_brace;
+        if (first_line_ss.rdbuf()->in_avail() > 0) {
+            if (first_line_ss >> end_brace && end_brace == "}") {
+                return loc;
+            }
+        }
+    }
     while (std::getline(file, line)) {
         line = trim(line);
         if (line.empty() || line[0] == '#') continue;
@@ -161,7 +197,6 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
         }
 
         std::stringstream ss(line);
-        std::string key;
         ss >> key;
 
         if (key == "root") {
@@ -195,3 +230,51 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
     }
     throw std::runtime_error("Error: Unexpected end of file inside location block");
 }
+// LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path) {
+//     LocationConfig loc;
+//     loc.path = path;
+//     std::string line;
+
+//     while (std::getline(file, line)) {
+//         line = trim(line);
+//         if (line.empty() || line[0] == '#') continue;
+
+//         if (line == "}") {
+//             return loc;
+//         }
+
+//         std::stringstream ss(line);
+//         std::string key;
+//         ss >> key;
+
+//         if (key == "root") {
+//             ss >> loc.root;
+//             remove_semicolon(loc.root);
+//         }
+//         else if (key == "index") {
+//             std::string idx;
+//             while (ss >> idx) {
+//                 remove_semicolon(idx);
+//                 loc.index.push_back(idx);
+//             }
+//         }
+//         else if (key == "methods") {
+//             std::string method;
+//             while (ss >> method) {
+//                 remove_semicolon(method);
+//                 loc.methods.push_back(method);
+//             }
+//         }
+//         else if (key == "autoindex") {
+//             std::string val;
+//             ss >> val;
+//             remove_semicolon(val);
+//             loc.autoindex = (val == "on");
+//         }
+//         else if (key == "cgi_pass") {
+//             ss >> loc.cgi_ext >> loc.cgi_path;
+//             remove_semicolon(loc.cgi_path);
+//         }
+//     }
+//     throw std::runtime_error("Error: Unexpected end of file inside location block");
+// }

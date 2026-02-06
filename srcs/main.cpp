@@ -1,10 +1,31 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <sys/epoll.h> // Добавлен для EventLoop
+
+/*
+ * Заголовки C++
+ */
 #include <iostream>
 #include <vector>
 #include <set>
+#include <string>
+#include <map>
+#include <stdexcept>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+
+/*
+ * Заголовки проекта
+ */
+#include "Colors.hpp"
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "EventLoop.hpp"
-#include "Colors.hpp"
 
 int main(int argc, char **argv) {
     if (argc > 2) {
@@ -16,21 +37,22 @@ int main(int argc, char **argv) {
 
     try {
         std::cout << YELLOW << "[Init] Parsing config: " << configPath << RESET << std::endl;
-        ConfigParser parser;
-        std::vector<ServerConfig> configs = parser.parse(configPath);
+
+        ConfigParser &parser = ConfigParser::get_instance();
+        const std::vector<ServerConfig> &servers = parser.parse(configPath);
 
         std::vector<Socket> listeningSockets;
-        std::set<int> portsBound;
+        std::set<int> listeningPorts;
 
-        for (size_t i = 0; i < configs.size(); ++i) {
-            int port = configs[i].port;
-            
-            if (portsBound.find(port) == portsBound.end()) {
-                Socket sock;
-                sock.setup(port);
-                listeningSockets.push_back(sock);
-                portsBound.insert(port);
-                std::cout << GREEN << "   -> Prepared Socket on port " << port << RESET << std::endl;
+        for (size_t i = 0; i < servers.size(); ++i) {
+            for (size_t j = 0; j < servers[i].ports.size(); ++j) {
+                int port = servers[i].ports[j];
+                if (listeningPorts.find(port) == listeningPorts.end()) {
+                    Socket newSocket(port);
+                    listeningSockets.push_back(newSocket);
+                    listeningPorts.insert(port);
+                    std::cout << "   -> Prepared Socket on port " << listeningSockets.back().getPort() << " fd: " << listeningSockets.back().getFd() << std::endl;
+                }
             }
         }
 

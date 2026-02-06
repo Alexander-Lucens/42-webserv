@@ -7,9 +7,13 @@
 enum ParseResult {PARSE_OK, PARSE_INCOMPLETE, PARSE_ERROR};
 enum ScanResult {CONTINUE, STOP};
 
-Connection::Connection() {}
+// Connection::Connection() {}
 
-Connection::Connection(int fd): socket(fd) {}
+Connection::Connection(int fd) : _fd(fd) {
+    this->request.state = Request::REQUEST_LINE;
+}
+
+// Connection::Connection(Socket &socket): socket(socket) {}
 
 Connection::~Connection() {}
 
@@ -17,27 +21,45 @@ const std::string& Connection::get_read_buffer() const {
     return (this->read_buffer);
 }
 
-void Connection::on_readable() {
-    int     fd = this->socket.getFd();
+bool Connection::on_readable() {
     ssize_t bytes_read;
     char    buffer[1024];
     int     result;
 
-    while ((bytes_read = ::read(fd, buffer, sizeof(buffer))) > 0) {
+    while ((bytes_read = ::read(_fd, buffer, sizeof(buffer))) > 0) {
         this->read_buffer.append(buffer, bytes_read);
 	}
 
     if (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
         this->request.state = Request::ERROR;
         scan_buffer(); // one last time to execute the bad request via an error 400 response and close the connection
-        return;
+        return false;
     }
 
     while (true) {
         result = scan_buffer();
         if (result == STOP) 
-            return;
+            return true;
     }
+}
+
+/**
+ * @brief Method to send back all data from buffer to client
+ * 
+ * @return true 
+ * @return false 
+ */
+bool Connection::on_writable() {
+    if (this->write_buffer.empty()) {
+        return true; 
+    }
+    ssize_t bytes_sent = write(_fd, this->write_buffer.c_str(), this->write_buffer.size());
+
+    if (bytes_sent < 0) {
+        return false; 
+    }
+    this->write_buffer.erase(0, bytes_sent);
+    return true; 
 }
 
 int Connection::parse_request_line() {
@@ -205,25 +227,6 @@ int Connection::scan_buffer() {
         }
     }
 	return (CONTINUE);
-}
-
-/**
- * @brief Method to send back all data from buffer to client
- * 
- * @return true 
- * @return false 
- */
-bool Connection::on_writable() {
-    if (this->write_buffer.empty()) {
-        return true; 
-    }
-    ssize_t bytes_sent = write(this->socket.getFd(), this->write_buffer.c_str(), this->write_buffer.size());
-
-    if (bytes_sent < 0) {
-        return false; 
-    }
-    this->write_buffer.erase(0, bytes_sent);
-    return true; 
 }
 
 void Connection::clean_buffer_for_new_request() {

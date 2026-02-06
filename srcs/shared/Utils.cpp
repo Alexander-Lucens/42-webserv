@@ -20,8 +20,8 @@ std::string Utils::normalize_path(const std::string &path)
 	if (query_start != std::string::npos)
 		normalized = normalized.substr(0, query_start);
 
-	if (normalized.empty() || normalized == "/")
-		normalized = ConfigParser::getInstance().getId(0).index[0];
+	// if (normalized.empty() || normalized == "/")
+	// 	normalized = ConfigParser::getInstance().getId(0).index[0];
 
 	return normalized;
 }

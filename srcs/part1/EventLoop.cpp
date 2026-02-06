@@ -1,41 +1,15 @@
 #include "EventLoop.hpp"
+#include <sys/epoll.h>
 
 /* ----- OCF ----- */
-EventLoop::EventLoop() {
-    _epoll_fd = epoll_create1(0);
-	if (_epoll_fd == -1) {
-		throw std::runtime_error("Failed to create epoll file descriptor");
-	}
-};
+// EventLoop::EventLoop() {
+//     _epoll_fd = epoll_create1(0);
+// 	if (_epoll_fd == -1) {
+// 		throw std::runtime_error("Failed to create epoll file descriptor");
+// 	}
+// };
 
-void EventLoop::addSocket(Socket& serverSocket) {
-    int fd = serverSocket.getFd();
-    struct epoll_event event;
-    event.events = EPOLLIN;
-    event.data.fd = fd;
-
-    if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
-        throw std::runtime_error("Failed to add server socket to epoll");
-    }
-
-    _serverSockets.push_back(serverSocket);
-}
-
-void EventLoop::init() {
-    for (size_t i = 0; i < _serverSockets.size(); ++i) {
-        int fd = _serverSockets[i].getFd();
-        struct epoll_event event;
-        event.events = EPOLLIN;
-        event.data.fd = fd;
-
-        if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
-            throw std::runtime_error("Failed to add server socket to epoll");
-        }
-        std::cout << GREEN << " [EventLoop] Added Server Socket FD: " << fd << RESET << std::endl;
-    }
-}
-
-EventLoop::EventLoop(const std::vector<Socket>& servers) : _serverSocket(serverSocket) {
+EventLoop::EventLoop(const std::vector<Socket>& sockets) : _serverSockets(sockets) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1) {
 		throw std::runtime_error("Failed to create epoll file descriptor");
@@ -48,6 +22,33 @@ EventLoop::~EventLoop() {
 		delete it->second;
 	}
 	if (_epoll_fd != -1) close(_epoll_fd);
+}
+
+// void EventLoop::addSocket(Socket& serverSocket) {
+//     int fd = serverSocket.getFd();
+//     struct epoll_event event;
+//     event.events = EPOLLIN;
+//     event.data.fd = fd;
+
+//     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
+//         throw std::runtime_error("Failed to add server socket to epoll");
+//     }
+
+//     _serverSockets.push_back(serverSocket);
+// }
+
+void EventLoop::init() {
+    for (size_t i = 0; i < _serverSockets.size(); i++) {
+        int fd = _serverSockets[i].getFd();
+        struct epoll_event event;
+        event.events = EPOLLIN;
+        event.data.fd = fd;
+
+        if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
+            throw std::runtime_error("EventLoop::init() -> Failed to add server socket to epoll");
+        }
+        std::cout << GREEN << " [EventLoop] Added Server Socket FD: " << fd << RESET << std::endl;
+    }
 }
 
 // just to avoid unexpected behavior
@@ -83,9 +84,11 @@ void EventLoop::run() {
             int current_fd = events[i].data.fd;
 
             bool isServerSocket = false;
+            int port = -1;
             for (size_t j = 0; j < _serverSockets.size(); ++j) {
                 if (current_fd == _serverSockets[j].getFd()) {
                     isServerSocket = true;
+                    port = _serverSockets[j].getPort();
                     break;
                 }
             }
@@ -100,7 +103,7 @@ void EventLoop::run() {
                 fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
                 _connections[client_fd] = new Connection(client_fd);
-                _connections[client_fd]->set_request_port();
+                _connections[client_fd]->set_request_port(port);
 
                 struct epoll_event client_event;
                 client_event.events = EPOLLIN | EPOLLOUT | EPOLLET;

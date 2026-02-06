@@ -18,6 +18,19 @@ struct LocationConfig {
 	LocationConfig() : autoindex(false) {}
 };
 
+/**
+ * @brief ServerConfig structure
+ * 
+ * @see ports - vector<int> - all PORT related to this server configuration
+ * 
+ * @see host - <std::string> - host name, used in Response and ConfigParser Singleton to get one specific config data
+ * 
+ * @see server_names - vector<std::string> - all server names 
+ * 
+ * @see error_pages - map<int, std::string> - map with path to error page map[error_num] = path as string
+ * 
+ * @see client_max_body_size - <size_t> - limitation for sith of body if required
+ */
 struct ServerConfig {
 	std::vector<int>				ports;
 	std::string						host;

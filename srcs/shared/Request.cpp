@@ -50,7 +50,7 @@ void Request::clear() {
 	state = REQUEST_LINE;
 }
 
-void Request::execute() {
-    std::cout << "HI from Request Execute" << std::endl;
-	response.handle_request(*this);
-}
+// void Request::execute() {
+//     std::cout << "HI from Request Execute" << std::endl;
+// 	this->response.handle_request(*this);
+// }

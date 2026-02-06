@@ -58,9 +58,17 @@ void Response::set_header(const std::string &key, const std::string &value)
 	_headers[key] = value;
 }
 
-// Set config implementation
-void set_config(const Request &request) {
-	_config =  ConfigParser::get_config(request.port, (request.getHeader("Host") || DEFAULT_HOST));
+/**
+ * @brief Set config implementation
+ * 
+ * @param request 
+ */
+void Response::set_config(const Request &request) {
+	std::string host = request.getHeader("Host");
+    if (host.empty()) {
+        host = DEFAULT_HOST;
+	}
+	_config = &ConfigParser::get_instance().get_config(request.port, host);
 }
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
@@ -84,9 +92,9 @@ Response Response::handle_get(const Request& request)
 
 	// Route /uploads/ to uploads directory
 	if (request.path.find("/uploads") == 0) 
-		file_path = "www" + request.path;
+		file_path = "www" + request.path; // file_path = "www" + request.path;
 	else
-		file_path = "www/base_page" + normalized_html_path;
+		file_path = _config->root + normalized_html_path;
 
 	if (!FileHandler::file_exists(file_path))
 		return handle_error(404);

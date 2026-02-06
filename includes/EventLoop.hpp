@@ -1,10 +1,10 @@
 #pragma once
 
-#include <sys/epoll.h>
 #include <fcntl.h>
 #include <map>
 #include <vector>
 #include <unistd.h>
+#include "Colors.hpp"
 #include "Socket.hpp"
 #include "Connection.hpp"
 
@@ -18,13 +18,13 @@ class EventLoop {
 
 	public:
 		/* ----- OCF ----- */
-		EventLoop();
-		EventLoop(const std::vector<Socket>& servers);
+		// EventLoop();
+		EventLoop(const std::vector<Socket>& sockets);
 		~EventLoop();
 		EventLoop& operator=(const EventLoop &other);
 		/* ------------- */
 
-		void addSocket(Socket& serverSocket);
+		// void addSocket(Socket& serverSocket);
 		void init();
 		void run();
 };
