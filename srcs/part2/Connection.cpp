@@ -187,18 +187,43 @@ int Connection::scan_buffer() {
 			return (CONTINUE);
         }
         case Request::DONE: {
-            this->request.execute();
+            this->response.handle_request(this->request);
             this->clean_buffer_for_new_request();
             this->request.clear();
             this->request.state = Request::REQUEST_LINE;
+            // new UPDATE
+            this->write_buffer += this->response.serialize();
+            ///
             return (CONTINUE);
         }
         case Request::ERROR: {
-            this->request.execute();
+            this->response.handle_request(this->request);
+            // new UPDATE
+            this->write_buffer += this->response.serialize();
+            ////
             return (STOP);
         }
     }
 	return (CONTINUE);
+}
+
+/**
+ * @brief Method to send back all data from buffer to client
+ * 
+ * @return true 
+ * @return false 
+ */
+bool Connection::on_writable() {
+    if (this->write_buffer.empty()) {
+        return true; 
+    }
+    ssize_t bytes_sent = write(this->socket.getFd(), this->write_buffer.c_str(), this->write_buffer.size());
+
+    if (bytes_sent < 0) {
+        return false; 
+    }
+    this->write_buffer.erase(0, bytes_sent);
+    return true; 
 }
 
 void Connection::clean_buffer_for_new_request() {

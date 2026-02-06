@@ -1,6 +1,5 @@
 # include "Response.hpp"
 # include "Request.hpp"
-#include "ConfigParser.hpp"
 
 /* 
 HttpRequest (from parser)
@@ -58,7 +57,6 @@ void Response::set_header(const std::string &key, const std::string &value)
 {	
 	_headers[key] = value;
 }
-
 
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)

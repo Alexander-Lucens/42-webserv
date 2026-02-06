@@ -1,6 +1,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
+
 Request::Request(const Request &other) 
     : method(other.method), uri(other.uri),  version(other.version), 
       headers(other.headers), body(other.body), query_string(other.query_string), 
@@ -50,7 +51,6 @@ void Request::clear() {
 }
 
 void Request::execute() {
-    Response response;
-    std::cout << "HI" << std::endl;
+    std::cout << "HI from Request Execute" << std::endl;
 	response.handle_request(*this);
 }

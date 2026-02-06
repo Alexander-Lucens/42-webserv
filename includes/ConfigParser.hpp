@@ -23,7 +23,7 @@ class ConfigParser {
     public:
         ~ConfigParser();
 
-        static ConfigParser &getInstance();
+        static ConfigParser &get_instance();
         std::vector<ServerConfig> parse(const std::string &config_path);
-        const std::vector<ServerConfig> &getServers() const;
-        const ServerConfig &ConfigParser::getConfig(int port, std::string host) const;
+        const std::vector<ServerConfig> &get_servers() const;
+        const ServerConfig &ConfigParser::get_config(int port, std::string host) const;

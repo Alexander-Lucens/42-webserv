@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+#define DEFAULT_HOST "localhost"
+
 class Response;
 
 /**

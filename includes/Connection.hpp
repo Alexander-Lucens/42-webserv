@@ -10,6 +10,7 @@
 
 #include "Socket.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 
 
 class Connection {
@@ -19,6 +20,7 @@ class Connection {
 		std::string				write_buffer;
 		int						current_read_index;
 		Request					request;
+		Response				response;
 
 	public:
 		Connection();

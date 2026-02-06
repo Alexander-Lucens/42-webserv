@@ -5,16 +5,16 @@
 ConfigParser::ConfigParser() {}
 ConfigParser::~ConfigParser() {}
 
-ConfigParser &ConfigParser::getInstance() {
+ConfigParser &ConfigParser::get_instance() {
     static ConfigParser instance;
     return instance;
 }
 
-const std::vector<ServerConfig> &ConfigParser::getServers() const {
+const std::vector<ServerConfig> &ConfigParser::get_servers() const {
     return _servers;
 }
 
-const ServerConfig &ConfigParser::getConfig(int port, const std::string &host) const {
+const ServerConfig &ConfigParser::get_config(int port, const std::string &host) const {
     const ServerConfig* defaultServer = NULL;
 
     for (size_t i = 0; i < _servers.size(); ++i) {

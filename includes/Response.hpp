@@ -15,6 +15,7 @@
 #include <algorithm>
 #include "FileHandler.hpp"
 #include "Utils.hpp"
+#include "ConfigParser.hpp"
 
 
 #define NEW_LINE		"\r\n"
@@ -54,6 +55,7 @@ class Response {
 
 
 	public:
+		ServerConfig _config;
 		std::string version; 
 
 		/* ----- OCF ----- */
@@ -62,6 +64,11 @@ class Response {
 		Response(const Response &other);
 		Response& operator=(const Response &other);
 		/* ------------- */
+
+		// Config data
+		void set_config(int port, std::string host) {
+			_config =  ConfigParser::get_config(request.port, (request.getHeader("Host") || DEFAULT_HOST));
+		}
 
 		// Requests
 		Response 		handle_get(const Request &request);
