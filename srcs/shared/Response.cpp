@@ -58,9 +58,14 @@ void Response::set_header(const std::string &key, const std::string &value)
 	_headers[key] = value;
 }
 
+// Set config implementation
+void set_config(const Request &request) {
+	_config =  ConfigParser::get_config(request.port, (request.getHeader("Host") || DEFAULT_HOST));
+}
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
+	set_config(request);
 	if (request.method == "GET")
 		return (handle_get(request));
 	if (request.method == "POST")

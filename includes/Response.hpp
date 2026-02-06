@@ -66,9 +66,7 @@ class Response {
 		/* ------------- */
 
 		// Config data
-		void set_config(int port, std::string host) {
-			_config =  ConfigParser::get_config(request.port, (request.getHeader("Host") || DEFAULT_HOST));
-		}
+		void set_config(const Request &request);
 
 		// Requests
 		Response 		handle_get(const Request &request);
