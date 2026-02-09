@@ -4,11 +4,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include <sys/epoll.h> // Добавлен для EventLoop
+#include <sys/epoll.h>
 
-/*
- * Заголовки C++
- */
+
 #include <iostream>
 #include <vector>
 #include <set>
@@ -19,21 +17,18 @@
 #include <cstring>
 #include <cerrno>
 
-/*
- * Заголовки проекта
- */
 #include "Colors.hpp"
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "EventLoop.hpp"
 
 int main(int argc, char **argv) {
-    if (argc > 2) {
+    if (argc != 2) {
         std::cerr << "Usage: ./webserv [config_file]" << std::endl;
         return 1;
     }
 
-    std::string configPath = (argc == 2) ? argv[1] : "config.conf";
+    std::string configPath = argv[1];
 
     try {
         std::cout << YELLOW << "[Init] Parsing config: " << configPath << RESET << std::endl;
