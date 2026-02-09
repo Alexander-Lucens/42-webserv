@@ -184,7 +184,7 @@ std::string FileHandler::handle_autoindex(const Request &request, const std::str
 	for (size_t i = 0; i < file_entries.size(); ++i)
 	{
 		std::string filename = file_entries[i];
-		std::string href_link = request.path;
+		std::string href_link = request.uri;
 		if (!href_link.empty() && href_link[href_link.size() - 1] != '/')
 			href_link += '/';
 		href_link += filename;

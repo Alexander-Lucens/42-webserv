@@ -87,14 +87,24 @@ Response Response::handle_get(const Request& request)
 {
 	Response response;
 
-	std::string normalized_html_path = Utils::normalize_path(request.path);
+	std::string normalized_html_path = Utils::normalize_path(request.uri);
 	std::string file_path;
 
 	// Route /uploads/ to uploads directory
-	if (request.path.find("/uploads") == 0) 
-		file_path = "www" + request.path; // file_path = "www" + request.path;
-	else
-		file_path = _config->root + normalized_html_path;
+	if (request.uri.find("/uploads") == 0) 
+		file_path = "www" + normalized_html_path;
+	else 
+	{
+		if (normalized_html_path == "/")
+		{
+			file_path = _config->root + "/" + _config->index[0];
+		} else {
+			file_path = _config->root + "/base_page" + normalized_html_path;
+		}
+	}
+	
+	std::cout << "DEBUG: normalized_html_path = [" << normalized_html_path << "]" << std::endl;
+	std::cout << "DEBUG: file_path = [" << file_path << "]" << std::endl;
 
 	if (!FileHandler::file_exists(file_path))
 		return handle_error(404);
@@ -102,12 +112,17 @@ Response Response::handle_get(const Request& request)
 	// If it's a directory, list files
     if (FileHandler::is_directory(file_path))
 	{
+		std::string index_file = _config->root + "/" + _config->index[0];
+		if (FileHandler::file_exists(index_file))
+			file_path = index_file;
+		else 
+		{
 		std::string autoindex_html = FileHandler::handle_autoindex(request, file_path);
 		if (autoindex_html.empty())
-			return handle_error(403); // autoindex disabled in config
+			return handle_error(403);
 		return response_body(200, autoindex_html);
+    	}
 	}
-
 	if (!FileHandler::is_readable(file_path))
 		return handle_error(403);
 
@@ -120,7 +135,6 @@ Response Response::handle_get(const Request& request)
 	response.set_header("Server", SERVER);
 	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
 	response.set_body(html_content);
-
 	return (response);
 }
 
@@ -129,10 +143,10 @@ Response Response::handle_post(const Request& request)
 	if (!FileHandler::validate_content_length(request))
 		return handle_error(400);
 
-	if (request.path == "/submit")
+	if (request.uri == "/submit")
 		return handle_post_submit(request);
 
-	if (request.path == "/upload")
+	if (request.uri == "/upload")
 		return handle_post_upload(request);
 
 	return handle_error(405);
@@ -186,7 +200,7 @@ Response Response::handle_post_upload(const Request& request)
 Response Response::handle_delete(const Request &request)
 {
 	/* std::string filename = FileHandler::extract_form_data(request.body, "filename"); */
-	std::string filename = request.path.substr(9);
+	std::string filename = request.uri.substr(9);
 	std::cout << "DEBUG: request.body = [" << request.body << "]" << std::endl;
     std::cout << "DEBUG: extracted filename = [" << filename << "]" << std::endl;
     if (filename.empty())
@@ -266,7 +280,7 @@ std::string Response::serialize()
 
 	http_response << NEW_LINE;
 	http_response << this->_html_body;
-	return http_response.str(); // send_response_to_socket(http_response.str();
+	return http_response.str();
 } 
 
 /* Matches error code and returns error message  */

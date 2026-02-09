@@ -122,12 +122,13 @@ void EventLoop::run() {
                             _connections.erase(current_fd);
                         }
                     }
-                    else if (events[i].events & EPOLLOUT) {
+                    if (events[i].events & EPOLLOUT) {
                         // TO DO
                         if (!conn->on_writable()) {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
+							continue;
                         } // Implement logic to push data in connection back
                     }
                 }

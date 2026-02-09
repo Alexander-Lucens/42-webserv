@@ -53,6 +53,9 @@ bool Connection::on_writable() {
     if (this->write_buffer.empty()) {
         return true; 
     }
+	std::cout << BLUE << "ON_WRITABLE: Sending " << this->write_buffer.size() << " bytes" << RESET << std::endl;
+	std::cout << BLUE << "First 200 chars: [" << this->write_buffer.substr(0, 200) << "]" << RESET << std::endl;
+    
     ssize_t bytes_sent = write(_fd, this->write_buffer.c_str(), this->write_buffer.size());
 
     if (bytes_sent < 0) {
@@ -73,7 +76,8 @@ int Connection::parse_request_line() {
     std::string request_line = this->read_buffer.substr(start_pos, end_pos - start_pos);
 
     // building method
-    start_pos = end_pos + 1;
+    // start_pos = end_pos + 1; ℹ️ this was causing an offset. End pos is positing in read_buffer. Fixed by resetting the indices. 
+	start_pos = 0;
     end_pos = request_line.find(" ", start_pos);
     if (end_pos == std::string::npos)
         return (PARSE_ERROR);
@@ -222,18 +226,26 @@ int Connection::scan_buffer() {
             // TESTS VISUALIZATION
             std::cout << RED << "OUTPUT BUFFER DONE: " << this->write_buffer << RESET << std::endl; 
             // --- end TESTS VISUALIZATION
-            return (CONTINUE);
+            return (STOP);
         }
         case Request::ERROR: {
             // TESTS VISUALIZATION
             std::cout << YELLOW << "REQUEST write_buffer: " << this->read_buffer << RESET << std::endl;
             std::cout << GREEN << "REQUEST OBJ DONE: " << this->request.toString() << RESET << std::endl;
             // ---- end TESTS VISUALIZATION
-            this->response.handle_request(this->request);
+            this->response  = this->response.handle_request(this->request);
             // new UPDATE
-            this->write_buffer += this->response.serialize();
-            // TESTS VISUALIZATION
-            std::cout << RED << "OUTPUT BUFFER ERROR: " << this->write_buffer << RESET << std::endl; 
+            // this->write_buffer += this->response.serialize();
+			this->clean_buffer_for_new_request();
+			this->request.clear();
+			this->request.state = Request::REQUEST_LINE;
+			
+			std::string serialized = this->response.serialize();
+			// std::cout << "SERIALIZED OUTPUT SIZE: " << serialized.size() << std::endl;
+   			std::cout << "SERIALIZED OUTPUT: [" << serialized << "]" << std::endl;
+			this->write_buffer += serialized;
+					// TESTS VISUALIZATION
+        	// std::cout << RED << "OUTPUT BUFFER ERROR: " << this->write_buffer << RESET << std::endl; 
             // --- end TESTS VISUALIZATION
             return (STOP);
         }
