@@ -54,3 +54,17 @@ void Request::clear() {
 //     std::cout << "HI from Request Execute" << std::endl;
 // 	this->response.handle_request(*this);
 // }
+
+/// TMP just for check
+std::string Request::toString() const {
+	std::string result;
+	result += method + " " + path + " " + version + "\r\n";
+	result += "uri: " + uri + "\r\n";
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+		result += it->first + ": " + it->second + "\r\n";
+	}
+	result += "\r\n";
+	result += body;
+	return result;
+}
+/// end of tmp part

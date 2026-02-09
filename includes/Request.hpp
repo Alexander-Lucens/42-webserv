@@ -34,7 +34,9 @@ class Request {
 		std::string path;
 		std::string version;
 		std::map<std::string, std::string> headers;
+
 		std::string body;
+		
 		std::string query_string;
 
 		int			port;

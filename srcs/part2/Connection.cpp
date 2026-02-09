@@ -1,4 +1,4 @@
-
+#include "Colors.hpp"
 #include "Connection.hpp"
 #include <cctype>
 #include <string>
@@ -209,20 +209,32 @@ int Connection::scan_buffer() {
 			return (CONTINUE);
         }
         case Request::DONE: {
+            // TESTS VISUALIZATION
+            std::cout << YELLOW << "REQUEST write_buffer: " << this->read_buffer << RESET << std::endl;
+            std::cout << GREEN << "REQUEST OBJ DONE: " << this->request.toString() << RESET << std::endl;
+            // ---- end TESTS VISUALIZATION
             this->response.handle_request(this->request);
             this->clean_buffer_for_new_request();
             this->request.clear();
             this->request.state = Request::REQUEST_LINE;
             // new UPDATE
             this->write_buffer += this->response.serialize();
-            ///
+            // TESTS VISUALIZATION
+            std::cout << RED << "OUTPUT BUFFER DONE: " << this->write_buffer << RESET << std::endl; 
+            // --- end TESTS VISUALIZATION
             return (CONTINUE);
         }
         case Request::ERROR: {
+            // TESTS VISUALIZATION
+            std::cout << YELLOW << "REQUEST write_buffer: " << this->read_buffer << RESET << std::endl;
+            std::cout << GREEN << "REQUEST OBJ DONE: " << this->request.toString() << RESET << std::endl;
+            // ---- end TESTS VISUALIZATION
             this->response.handle_request(this->request);
             // new UPDATE
             this->write_buffer += this->response.serialize();
-            ////
+            // TESTS VISUALIZATION
+            std::cout << RED << "OUTPUT BUFFER ERROR: " << this->write_buffer << RESET << std::endl; 
+            // --- end TESTS VISUALIZATION
             return (STOP);
         }
     }
