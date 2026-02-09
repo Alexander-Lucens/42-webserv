@@ -26,7 +26,7 @@ jobs:
     # Check if its runinig
     - name: Run Smoke Test
       run: |
-        ./webserv &
+        ./webserv tests/configs/simple.conf &
         PID=$!
         sleep 3
         curl -v http://localhost:8080 || kill $PID 
