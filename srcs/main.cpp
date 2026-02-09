@@ -1,119 +1,68 @@
-#include <string>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <sys/epoll.h>
+
+
 #include <iostream>
+#include <vector>
+#include <set>
+#include <string>
+#include <map>
+#include <stdexcept>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+
 #include "Colors.hpp"
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "EventLoop.hpp"
 
-/**
- * to test fast:
- * c++ -Wall -Wextra -Werror -std=c++98 -Iincludes srcs/part1/ConfigParser.cpp srcs/main.cpp  && ./a.out
- * 
- * Currently doing nothing but just for usage
- */
-int main(int ac, char **av) {
-    try {
-        std::string config_path = (ac > 1) ? av[1] : "config.conf";
-        
-        ConfigParser::getInstance().parse(config_path);
-        const std::vector<ServerConfig> &servers = ConfigParser::getInstance().getServers();
-        std::cout << "Loaded " << servers.size() << " server(s)\n" << std::endl;
-        
-		/*
-		const ServerConfig &server = servers[0];
-		{
-			std::cout << "=== Server ===" << std::endl;
-		std::cout << "  Port: " << server.port << std::endl;
-		std::cout << "  Host: " << server.host << std::endl;
-	
-		std::cout << "  Server names: ";
-		for (size_t j = 0; j < server.server_names.size(); j++) {
-			std::cout << server.server_names[j];
-			if (j < server.server_names.size() - 1) std::cout << ", ";
-		}
-		std::cout << std::endl;
-		
-		std::cout << "  Root: " << server.root << std::endl;
-		
-		std::cout << "  Index files: ";
-		for (size_t j = 0; j < server.index.size(); j++) {
-			std::cout << server.index[j];
-			if (j < server.index.size() - 1) std::cout << ", ";
-		}
-		std::cout << std::endl;
-		
-		std::cout << "  Client max body size: " << server.client_max_body_size << " bytes" << std::endl;
-		
-		if (!server.error_pages.empty()) {
-			std::cout << "  Error pages:" << std::endl;
-			for (std::map<int, std::string>::const_iterator it = server.error_pages.begin(); 
-					it != server.error_pages.end(); ++it) {
-				std::cout << "    " << it->first << " -> " << it->second << std::endl;
-			}
-		}
-		
-		if (!server.locations.empty()) {
-			std::cout << "  Locations:" << std::endl;
-			for (std::map<std::string, LocationConfig>::const_iterator it = server.locations.begin();
-					it != server.locations.end(); ++it) {
-				const LocationConfig &loc = it->second;
-				std::cout << "    Path: " << loc.path << std::endl;
-				if (!loc.root.empty())
-					std::cout << "      Root: " << loc.root << std::endl;
-				
-				if (!loc.index.empty()) {
-					std::cout << "      Index: ";
-					for (size_t j = 0; j < loc.index.size(); j++) {
-						std::cout << loc.index[j];
-						if (j < loc.index.size() - 1) std::cout << ", ";
-					}
-					std::cout << std::endl;
-				}
-				
-				if (!loc.methods.empty()) {
-					std::cout << "      Methods: ";
-					for (size_t j = 0; j < loc.methods.size(); j++) {
-						std::cout << loc.methods[j];
-						if (j < loc.methods.size() - 1) std::cout << ", ";
-					}
-					std::cout << std::endl;
-				}
-				
-				std::cout << "      Autoindex: " << (loc.autoindex ? "on" : "off") << std::endl;
-				
-				if (!loc.cgi_ext.empty())
-					std::cout << "      CGI: " << loc.cgi_ext << " -> " << loc.cgi_path << std::endl;
-			}
-		}
-		
-		std::cout << std::endl;
-		}
-		*/
-		const ServerConfig &server = servers[0];
-
-		Socket serverSocket;
-		serverSocket.setup(server.port);
-		EventLoop loop(serverSocket);
-		std::cout << 0 << " --> Browser: " << BLUE << "http://localhost:" << server.port << RESET << std::endl;
-
-		for (size_t i = 1; i < servers.size(); i++) {
-			const ServerConfig &server1 = servers[i];
-
-			Socket serverSocket1;
-			serverSocket1.setup(server1.port);
-			EventLoop loop(serverSocket1);
-
-			std::cout << i << " --> Browser: " << BLUE << "http://localhost:" << server.port << RESET << std::endl;
-		}
-		loop.run();
-
-			
-		
-        
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        std::cerr << "Usage: ./webserv [config_file]" << std::endl;
         return 1;
     }
-    
+
+    std::string configPath = argv[1];
+
+    try {
+        std::cout << YELLOW << "[Init] Parsing config: " << configPath << RESET << std::endl;
+
+        ConfigParser &parser = ConfigParser::get_instance();
+        const std::vector<ServerConfig> &servers = parser.parse(configPath);
+
+        std::vector<Socket> listeningSockets;
+        std::set<int> listeningPorts;
+
+        for (size_t i = 0; i < servers.size(); ++i) {
+            for (size_t j = 0; j < servers[i].ports.size(); ++j) {
+                int port = servers[i].ports[j];
+                if (listeningPorts.find(port) == listeningPorts.end()) {
+                    Socket newSocket(port);
+                    listeningSockets.push_back(newSocket);
+                    listeningPorts.insert(port);
+                    std::cout << "   -> Prepared Socket on port " << listeningSockets.back().getPort() << " fd: " << listeningSockets.back().getFd() << std::endl;
+                }
+            }
+        }
+
+        if (listeningSockets.empty()) {
+            throw std::runtime_error("No valid server ports found in config.");
+        }
+
+        std::cout << YELLOW << "[Init] Starting EventLoop..." << RESET << std::endl;
+        EventLoop loop(listeningSockets);
+        loop.run();
+
+    } catch (const std::exception& e) {
+        std::cerr << RED << "Error: " << e.what() << RESET << std::endl;
+        return 1;
+    }
+
     return 0;
 }

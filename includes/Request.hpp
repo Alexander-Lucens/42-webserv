@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+#define DEFAULT_HOST "localhost"
+
 class Response;
 
 /**
@@ -32,8 +34,12 @@ class Request {
 		std::string path;
 		std::string version;
 		std::map<std::string, std::string> headers;
+
 		std::string body;
+		
 		std::string query_string;
+
+		int			port;
 
 		enum RequestState {
 			REQUEST_LINE,

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include "FileHandler.hpp"
 #include "Utils.hpp"
+#include "ConfigParser.hpp"
 
 
 #define NEW_LINE		"\r\n"
@@ -56,12 +57,18 @@ class Response {
 	public:
 		std::string version; 
 
+		// _configuration data
+		const ServerConfig* _config;
+
 		/* ----- OCF ----- */
 		Response();
 		~Response();
 		Response(const Response &other);
 		Response& operator=(const Response &other);
 		/* ------------- */
+
+		// Config data
+		void set_config(const Request &request);
 
 		// Requests
 		Response 		handle_get(const Request &request);

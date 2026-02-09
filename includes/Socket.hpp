@@ -1,23 +1,25 @@
 #pragma once
 
 #include <netinet/in.h>
-#include <stdexcept>
 
 class Socket {
 	private:
 		int _fd;
+		int _port;
 		struct sockaddr_in _address;
+
+		// Socket &operator=(const Socket &other);
 
 	public:
 		/* ----- OCF ----- */
 		Socket();
-		Socket(int fd);
+		Socket(int port);
+		Socket(const Socket &other); // <- this one is for test, in project will be used Socket().setup(PORT);
+
 		~Socket();
-		Socket(const Socket &other);
-		Socket &operator=(const Socket &other);
 		/* ----------------- */
 
 		void setup(int port);
-
 		int getFd() const;
+		int getPort() const;
 };

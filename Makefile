@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
+#    By: akuzmin <akuzmin@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/02/03 16:16:18 by lkramer          ###   ########.fr        #
+#    Updated: 2026/02/06 16:37:08 by akuzmin          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,13 +20,16 @@ INCLUDE     := includes
 SRC_DIR		:= srcs
 
 SRCS        :=  $(SRC_DIR)/main.cpp \
-				$(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp $(SRC_DIR)/shared/FileHandler.cpp $(SRC_DIR)/shared/Utils.cpp \
-				$(SRC_DIR)/part1/Socket.cpp $(SRC_DIR)/part1/EventLoop.cpp $(SRC_DIR)/part1/ConfigParser.cpp \
-				$(SRC_DIR)/part2/Connection.cpp \
-				tests/test_request.cpp tests/test_socket.cpp tests/test_response.cpp\
-				
+                $(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp $(SRC_DIR)/shared/FileHandler.cpp $(SRC_DIR)/shared/Utils.cpp \
+                $(SRC_DIR)/part1/Socket.cpp $(SRC_DIR)/part1/EventLoop.cpp $(SRC_DIR)/part1/ConfigParser.cpp \
+                $(SRC_DIR)/part2/Connection.cpp
+                
 TEST_SRCS	:= tests/test_response.cpp \
-				srcs/Response.cpp 
+               tests/test_request.cpp \
+               tests/test_socket.cpp \
+               srcs/shared/Response.cpp \
+               srcs/shared/Request.cpp \
+               srcs/part1/Socket.cpp
 
 # **************************************************************************** #
 

@@ -1,6 +1,7 @@
 #include "Request.hpp"
 #include "Response.hpp"
 
+
 Request::Request(const Request &other) 
     : method(other.method), uri(other.uri),  version(other.version), 
       headers(other.headers), body(other.body), query_string(other.query_string), 
@@ -49,8 +50,21 @@ void Request::clear() {
 	state = REQUEST_LINE;
 }
 
-void Request::execute() {
-    Response response;
-    std::cout << "HI" << std::endl;
-	response.handle_request(*this);
+// void Request::execute() {
+//     std::cout << "HI from Request Execute" << std::endl;
+// 	this->response.handle_request(*this);
+// }
+
+/// TMP just for check
+std::string Request::toString() const {
+	std::string result;
+	result += method + " " + path + " " + version + "\r\n";
+	result += "uri: " + uri + "\r\n";
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+		result += it->first + ": " + it->second + "\r\n";
+	}
+	result += "\r\n";
+	result += body;
+	return result;
 }
+/// end of tmp part
