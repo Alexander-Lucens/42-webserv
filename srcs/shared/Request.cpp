@@ -16,7 +16,7 @@ Request& Request::operator=(const Request &other) {
 	if (this != &other) {
 		this->method = other.method;
 		this->uri = other.uri;
-		this->path = other.path;
+		// this->path = other.path;
 		this->version = other.version;
 		this->headers = other.headers;
 		this->body = other.body;
@@ -42,7 +42,7 @@ void Request::setHeader(const std::string &key, const std::string &value) {
 void Request::clear() {
 	method.clear();
 	uri.clear();
-	path.clear();
+	// path.clear();
 	version.clear();
 	headers.clear();
 	body.clear();
@@ -58,7 +58,7 @@ void Request::clear() {
 /// TMP just for check
 std::string Request::toString() const {
 	std::string result;
-	result += method + " " + path + " " + version + "\r\n";
+	result += method + " " + uri + " " + version + "\r\n";
 	result += "uri: " + uri + "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
 		result += it->first + ": " + it->second + "\r\n";
