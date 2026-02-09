@@ -31,7 +31,7 @@ class Request {
 	public:
 		std::string method;
 		std::string uri;
-		std::string path;
+		// std::string path;
 		std::string version;
 		std::map<std::string, std::string> headers;
 
