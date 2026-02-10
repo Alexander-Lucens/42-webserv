@@ -75,8 +75,7 @@ int Connection::parse_request_line() {
         return (PARSE_INCOMPLETE);
     std::string request_line = this->read_buffer.substr(start_pos, end_pos - start_pos);
 
-    // building method
-    // start_pos = end_pos + 1; ℹ️ this was causing an offset. End pos is positing in read_buffer. Fixed by resetting the indices. 
+    // building method. 
 	start_pos = 0;
     end_pos = request_line.find(" ", start_pos);
     if (end_pos == std::string::npos)
@@ -97,7 +96,25 @@ int Connection::parse_request_line() {
         return (PARSE_ERROR);
     this->request.version = request_line.substr(start_pos, end_pos - start_pos);
 
+    parse_uri();
+
     return (PARSE_OK);
+}
+
+void Connection::parse_uri() {
+    std::string::size_type start_pos = 0;
+    std::string::size_type end_pos;
+
+	start_pos = 0;
+    end_pos = this->request.uri.find("?", start_pos);
+    if (end_pos == std::string::npos)
+        return;
+    this->request.path = this->request.uri.substr(start_pos, end_pos - start_pos);
+
+	start_pos = end_pos + 1;
+    end_pos = this->request.uri.size();
+    this->request.query_string = this->request.uri.substr(start_pos, end_pos - start_pos);
+
 }
 
 int Connection::parse_request_headers() {
@@ -112,8 +129,9 @@ int Connection::parse_request_headers() {
     std::string headers_block = this->read_buffer.substr(start_pos, end_pos - start_pos);
 
     // turning the whole string lowercase
-    std::transform(headers_block.begin(), headers_block.end(), headers_block.begin(), 
-        static_cast<int(*)(int)>(std::tolower));
+    headers_block = Utils::lower_case(headers_block);
+    // std::transform(headers_block.begin(), headers_block.end(), headers_block.begin(), 
+    //     static_cast<int(*)(int)>(std::tolower));
 
     start_pos = 0;
     std::string::size_type headers_block_size = headers_block.size();
