@@ -18,7 +18,7 @@ class Connection {
 		int						_fd;
 		std::string				read_buffer;
 		std::string				write_buffer;
-		int						current_read_index;
+		// int						current_read_index;
 		Request					request;
 		Response				response;
 
