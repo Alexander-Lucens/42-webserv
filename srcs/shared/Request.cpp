@@ -39,11 +39,15 @@ std::map<std::string, std::string> Request::getAllHeaders() const {
 	return headers;
 }
 
-std::string Request::getHeader(const std::string &key) const {
-	std::map<std::string, std::string>::const_iterator it = headers.find(key);
-	if (it != headers.end()) {
+std::string Request::getHeader(const std::string &key) const
+{	
+	std::string lower_key = key;
+	std::transform(lower_key.begin(), lower_key.end(), lower_key.begin(),
+		static_cast<int(*)(int)>(std::tolower));
+
+	std::map<std::string, std::string>::const_iterator it = headers.find(lower_key);
+	if (it != headers.end())
 		return it->second;
-	}
 	return "";
 }
 

@@ -140,7 +140,7 @@ std::string FileHandler::html_escape(const std::string& input)
 	return out;
 }
 
-std::string FileHandler::handle_autoindex(const Request &request, const std::string &directory_path)
+std::string FileHandler::handle_autoindex(const std::string &normalized_html_path, const std::string &directory_path)
 {
 	//  pointer to a directory stream
 	DIR* directory = opendir(directory_path.c_str());
@@ -184,7 +184,7 @@ std::string FileHandler::handle_autoindex(const Request &request, const std::str
 	for (size_t i = 0; i < file_entries.size(); ++i)
 	{
 		std::string filename = file_entries[i];
-		std::string href_link = request.uri;
+		std::string href_link = normalized_html_path;
 		if (!href_link.empty() && href_link[href_link.size() - 1] != '/')
 			href_link += '/';
 		href_link += filename;

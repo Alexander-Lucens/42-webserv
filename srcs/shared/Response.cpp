@@ -76,6 +76,7 @@ void Response::set_config(const Request &request) {
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
+	 std::cout << "DEBUG handle_request: method=[" << request.method << "] uri=[" << request.uri << "]" << std::endl;
 	set_config(request);
 	if (request.method == "GET")
 		return (handle_get(request));
@@ -90,11 +91,11 @@ Response Response::handle_get(const Request& request)
 {
 	Response response;
 
-	std::string normalized_html_path = Utils::normalize_path(request.uri);
+	std::string normalized_html_path = request.uri; // Utils::normalize_path(request.uri);
 	std::string file_path;
 
 	// Route /uploads/ to uploads directory
-	if (request.uri.find("/uploads") == 0) 
+	if (normalized_html_path.find("/uploads") == 0) 
 		file_path = "www" + normalized_html_path;
 	else 
 	{
@@ -115,15 +116,15 @@ Response Response::handle_get(const Request& request)
 	// If it's a directory, list files
     if (FileHandler::is_directory(file_path))
 	{
-		std::string index_file = _config->root + "/" + _config->index[0];
+		std::string index_file = file_path + "/" + _config->index[0];
 		if (FileHandler::file_exists(index_file))
 			file_path = index_file;
 		else 
 		{
-		std::string autoindex_html = FileHandler::handle_autoindex(request, file_path);
-		if (autoindex_html.empty())
-			return handle_error(403);
-		return response_body(200, autoindex_html);
+			std::string autoindex_html = FileHandler::handle_autoindex(normalized_html_path, file_path);
+			if (autoindex_html.empty())
+				return handle_error(403);
+			return response_body(200, autoindex_html);
     	}
 	}
 	if (!FileHandler::is_readable(file_path))
@@ -157,13 +158,21 @@ Response Response::handle_get(const Request& request)
 
 Response Response::handle_post(const Request& request)
 {
-	if (!FileHandler::validate_content_length(request))
+	std::cout << "DEBUG handle_post: Content-Length header = [" << request.getHeader("Content-Length") << "]" << std::endl;
+    std::cout << "DEBUG handle_post: content-length header = [" << request.getHeader("content-length") << "]" << std::endl;
+    std::cout << "DEBUG handle_post: body size = [" << request.body.size() << "]" << std::endl;
+    std::cout << "DEBUG handle_post: body = [" << request.body.substr(0, 100) << "...]" << std::endl;
+    
+	if (!FileHandler::validate_content_length(request)) 
+	{
+		std::cout << "DEBUG: validate_content_length FAILED" << std::endl;
 		return handle_error(400);
+	}
 
-	if (request.path.find("/submit") != std::string::npos)
+	if (request.uri.find("/submit") == 0)
 		return handle_post_submit(request);
 
-	if (request.path.find("/upload") != std::string::npos)
+	if (request.uri.find("/upload") == 0)
 		return handle_post_upload(request);
 
 	if	(request.path.find(".py") != std::string::npos || request.path.find(".cgi") != std::string::npos)
@@ -219,7 +228,6 @@ Response Response::handle_post_upload(const Request& request)
 
 Response Response::handle_delete(const Request &request)
 {
-	/* std::string filename = FileHandler::extract_form_data(request.body, "filename"); */
 	std::string filename = request.uri.substr(9);
 	std::cout << "DEBUG: request.body = [" << request.body << "]" << std::endl;
     std::cout << "DEBUG: extracted filename = [" << filename << "]" << std::endl;

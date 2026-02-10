@@ -75,7 +75,7 @@ int Connection::parse_request_line() {
         return (PARSE_INCOMPLETE);
     std::string request_line = this->read_buffer.substr(start_pos, end_pos - start_pos);
 
-    // building method. 
+    // building method
 	start_pos = 0;
     end_pos = request_line.find(" ", start_pos);
     if (end_pos == std::string::npos)
@@ -90,12 +90,14 @@ int Connection::parse_request_line() {
     this->request.uri = request_line.substr(start_pos, end_pos - start_pos);
 
     // building version
-    start_pos = end_pos + 1;
-    end_pos = request_line.find(" ", start_pos);
-    if (end_pos == std::string::npos)
-        return (PARSE_ERROR);
-    this->request.version = request_line.substr(start_pos, end_pos - start_pos);
+	start_pos = end_pos + 1;
+	this->request.version = request_line.substr(start_pos);
 
+	// Optionally validate version
+	if (this->request.version.empty() || 
+		(this->request.version != "HTTP/1.1" && this->request.version != "HTTP/1.0"))
+		return (PARSE_ERROR);
+		
     parse_uri();
 
     return (PARSE_OK);
@@ -128,11 +130,6 @@ int Connection::parse_request_headers() {
         return (PARSE_INCOMPLETE);
     std::string headers_block = this->read_buffer.substr(start_pos, end_pos - start_pos);
 
-    // turning the whole string lowercase
-    headers_block = Utils::lower_case(headers_block);
-    // std::transform(headers_block.begin(), headers_block.end(), headers_block.begin(), 
-    //     static_cast<int(*)(int)>(std::tolower));
-
     start_pos = 0;
     std::string::size_type headers_block_size = headers_block.size();
 
@@ -144,6 +141,9 @@ int Connection::parse_request_headers() {
         
         std::string key = headers_block.substr(start_pos, end_pos - start_pos);
 
+		std::transform(key.begin(), key.end(), key.begin(), 
+            static_cast<int(*)(int)>(std::tolower));
+			
         start_pos = end_pos + 1;
         while (start_pos < headers_block_size &&
         std::isspace(static_cast<unsigned char>(headers_block[start_pos])))
@@ -232,39 +232,30 @@ int Connection::scan_buffer() {
         }
         case Request::DONE: {
             // TESTS VISUALIZATION
-            std::cout << YELLOW << "REQUEST write_buffer: " << this->read_buffer << RESET << std::endl;
-            std::cout << GREEN << "REQUEST OBJ DONE: " << this->request.toString() << RESET << std::endl;
+            // std::cout << YELLOW << "REQUEST write_buffer: " << this->read_buffer << RESET << std::endl;
+            //std::cout << GREEN << "REQUEST OBJ DONE: " << this->request.toString() << RESET << std::endl;
             // ---- end TESTS VISUALIZATION
-            this->response.handle_request(this->request);
-            this->clean_buffer_for_new_request();
+            this->response = this->response.handle_request(this->request);
+            
+			this->clean_buffer_for_new_request();
             this->request.clear();
             this->request.state = Request::REQUEST_LINE;
             // new UPDATE
-            this->write_buffer += this->response.serialize();
+			std::string serialized = this->response.serialize();
+            this->write_buffer += serialized;
             // TESTS VISUALIZATION
-            std::cout << RED << "OUTPUT BUFFER DONE: " << this->write_buffer << RESET << std::endl; 
+            // std::cout << RED << "OUTPUT BUFFER DONE: " << this->write_buffer << RESET << std::endl; 
             // --- end TESTS VISUALIZATION
             return (STOP);
         }
         case Request::ERROR: {
-            // TESTS VISUALIZATION
-            std::cout << YELLOW << "REQUEST write_buffer: " << this->read_buffer << RESET << std::endl;
-            std::cout << GREEN << "REQUEST OBJ DONE: " << this->request.toString() << RESET << std::endl;
-            // ---- end TESTS VISUALIZATION
-            this->response  = this->response.handle_request(this->request);
-            // new UPDATE
-            // this->write_buffer += this->response.serialize();
+      		this->response = this->response.handle_error(400);
 			this->clean_buffer_for_new_request();
 			this->request.clear();
 			this->request.state = Request::REQUEST_LINE;
-			
+			// new UPDATE
 			std::string serialized = this->response.serialize();
-			// std::cout << "SERIALIZED OUTPUT SIZE: " << serialized.size() << std::endl;
-   			std::cout << "SERIALIZED OUTPUT: [" << serialized << "]" << std::endl;
 			this->write_buffer += serialized;
-					// TESTS VISUALIZATION
-        	// std::cout << RED << "OUTPUT BUFFER ERROR: " << this->write_buffer << RESET << std::endl; 
-            // --- end TESTS VISUALIZATION
             return (STOP);
         }
     }
