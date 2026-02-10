@@ -98,7 +98,25 @@ int Connection::parse_request_line() {
 		(this->request.version != "HTTP/1.1" && this->request.version != "HTTP/1.0"))
 		return (PARSE_ERROR);
 		
+    parse_uri();
+
     return (PARSE_OK);
+}
+
+void Connection::parse_uri() {
+    std::string::size_type start_pos = 0;
+    std::string::size_type end_pos;
+
+	start_pos = 0;
+    end_pos = this->request.uri.find("?", start_pos);
+    if (end_pos == std::string::npos)
+        return;
+    this->request.path = this->request.uri.substr(start_pos, end_pos - start_pos);
+
+	start_pos = end_pos + 1;
+    end_pos = this->request.uri.size();
+    this->request.query_string = this->request.uri.substr(start_pos, end_pos - start_pos);
+
 }
 
 int Connection::parse_request_headers() {

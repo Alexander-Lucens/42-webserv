@@ -73,6 +73,7 @@ class Response {
 		// Requests
 		Response 		handle_get(const Request &request);
 		Response 		handle_post(const Request &request);
+		Response		handle_post_cgi(const Request& request);
 		Response		handle_delete(const Request &request);
 
 		Response 		handle_error(const int error_code);
