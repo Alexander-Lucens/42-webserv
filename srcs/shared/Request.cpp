@@ -16,7 +16,7 @@ Request& Request::operator=(const Request &other) {
 	if (this != &other) {
 		this->method = other.method;
 		this->uri = other.uri;
-		// this->path = other.path;
+		this->path = other.path;
 		this->version = other.version;
 		this->headers = other.headers;
 		this->body = other.body;
@@ -26,6 +26,18 @@ Request& Request::operator=(const Request &other) {
 	return *this;
 }
 
+bool Request::thereisHeader(const std::string &key) const {
+std::map<std::string, std::string>::const_iterator it = headers.find(key);
+	if (it != headers.end()) {
+		return (true);
+	}
+	else
+		return (false);
+}
+
+std::map<std::string, std::string> Request::getAllHeaders() const {
+	return headers;
+}
 
 std::string Request::getHeader(const std::string &key) const {
 	std::map<std::string, std::string>::const_iterator it = headers.find(key);

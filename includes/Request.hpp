@@ -31,7 +31,7 @@ class Request {
 	public:
 		std::string method;
 		std::string uri;
-		// std::string path;
+		std::string path;
 		std::string version;
 		std::map<std::string, std::string> headers;
 
@@ -58,6 +58,8 @@ class Request {
 		/* ------------- */
 
 		void clear();
+		bool thereisHeader(const std::string &key) const;
+		std::map<std::string, std::string> getAllHeaders() const;
 		std::string getHeader(const std::string &key) const;
 		void setHeader(const std::string &key, const std::string &value);
 		std::string toString() const;
