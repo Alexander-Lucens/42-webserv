@@ -23,6 +23,8 @@
 #define SERVER			"webserv/1.0"
 #define MAX_FILE_SIZE	(5 * 1024 * 1024) 
 
+enum Language {PYTHON, RUST};
+
 class Request; 
 
 /**
@@ -72,8 +74,9 @@ class Response {
 
 		// Requests
 		Response 		handle_get(const Request &request);
+		Response		handle_get_cgi(const Request& request, Language lang);
 		Response 		handle_post(const Request &request);
-		Response		handle_post_cgi(const Request& request);
+		Response		handle_post_cgi(const Request& request, Language lang);
 		Response		handle_delete(const Request &request);
 
 		Response 		handle_error(const int error_code);
