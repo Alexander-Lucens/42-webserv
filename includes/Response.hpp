@@ -87,9 +87,6 @@ class Response {
 		Response 		handle_request(const Request &request);
 		Response 		response_body(const int &status_code, const std::string &body);
 
-
-		Response 		response_body(const int &error_code, const std::string &body);
-
 		// Setter
 		void 			set_status(int status_code);
 		void 			set_header(const std::string &key, const std::string &value);
