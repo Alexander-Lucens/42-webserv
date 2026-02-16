@@ -28,14 +28,9 @@
 		fetch("/uploads/" + filename, {
 			method: "DELETE"
 		})
-		.then(response => {
-			if (response.ok) {
-				alert("File deleted successfully");
-				loadFiles();
-				document.getElementById("filename").value = "";
-			} else {
-				alert("Error deleting file: " + response.status);
-			}
+		.then(response => response.text())
+		.then(html => {
+			document.body.innerHTML = html;
 		})
 		.catch(error => {
 			alert("Error: " + error);

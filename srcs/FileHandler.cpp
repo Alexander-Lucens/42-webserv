@@ -102,16 +102,6 @@ std::string FileHandler::find_content_type(const std::string &content_file_path)
 	return ("text/html");
 	}
 
-bool FileHandler::validate_content_length(const Request &request)
-{
-	std::string content_length_val = request.getHeader("Content-Length");
-	if (content_length_val.empty() || request.body.empty())
-		return false;
-
-	int content_len = std::atoi(content_length_val.c_str());
-	return (int)request.body.length() == content_len;
-}
-
 bool FileHandler::save_uploaded_file(const std::string& file_path, const std::string& content)
 {
 	std::ofstream outfile(file_path.c_str(), std::ios::binary);

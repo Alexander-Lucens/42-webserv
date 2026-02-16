@@ -50,9 +50,14 @@ class Response {
 		std::map<std::string, std::string> _headers;
 
 		// Helper 
-		std::string			reason_message(int code);
-		Response			handle_post_submit(const Request& request);
-		Response			handle_post_upload(const Request& request);
+		std::string			reason_message(int status_code);
+		Response			handle_post_submit(const Request &request);
+		Response			handle_post_upload(const Request &request);
+		Response			response_redirect(const int &status_code, const std::string &body);
+		std::string 		file_path_check(const std::string &uri);
+		Response			handle_directory(const std::string& uri, std::string& file_path);
+
+
 
 
 	public:
@@ -80,8 +85,7 @@ class Response {
 
 		Response 		handle_error(const int error_code);
 		Response 		handle_request(const Request &request);
-
-		Response 		response_body(const int &error_code, const std::string &body);
+		Response 		response_body(const int &status_code, const std::string &body);
 
 		// Setter
 		void 			set_status(int status_code);
@@ -90,4 +94,5 @@ class Response {
 
 		// Serializer 
 		std::string serialize();
+
 };
