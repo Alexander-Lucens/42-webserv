@@ -1,4 +1,5 @@
 #include "Socket.hpp"
+#include "Logger.hpp"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -6,6 +7,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <cerrno>
+#include <sstream>
 
 Socket::Socket() : _fd(-1), _port(0) {
 	std::memset(&_address, 0, sizeof(_address));
@@ -45,6 +47,8 @@ Socket::Socket(int port) {
 	if (listen(_fd, SOMAXCONN) < 0) {
 		throw std::runtime_error("Failed to listen on socket");
 	}
+
+	LOG_INFO("Socket created on port " << port << " with fd " << _fd);
 }
 
 Socket::Socket(const Socket &other) : _fd(other._fd), _port(other._port) {
@@ -88,11 +92,15 @@ void Socket::setup(int port) {
 	_address.sin_port = htons(port);
 
 	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
-		throw std::runtime_error("Failed to bind socket");
+		std::stringstream ss;
+        ss << "Failed to bind to port " << port << ": " << strerror(errno);
+        throw std::runtime_error(ss.str());
 	}
 
 	if (listen(_fd, SOMAXCONN) < 0) {
-		throw std::runtime_error("Failed to listen on socket");
+		std::stringstream ss;
+        ss << "Failed to listen on socket: " << strerror(errno);
+        throw std::runtime_error(ss.str());
 	}
 }
 

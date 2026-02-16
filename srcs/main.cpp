@@ -16,11 +16,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <sstream>
 
 #include "Colors.hpp"
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "EventLoop.hpp"
+#include "Logger.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 2) {
@@ -31,10 +33,16 @@ int main(int argc, char **argv) {
     std::string configPath = argv[1];
 
     try {
-        std::cout << YELLOW << "[Init] Parsing config: " << configPath << RESET << std::endl;
+        LOG_INFO("Starting web server...");
+        LOG_INFO("Parsing config: " << configPath);
 
         ConfigParser &parser = ConfigParser::get_instance();
         const std::vector<ServerConfig> &servers = parser.parse(configPath);
+        LOG_INFO("Configuration parsed successfully.");
+
+        if (servers.empty()) {
+            throw std::runtime_error("No servers defined in configuration.");
+        }
 
         std::vector<Socket> listeningSockets;
         std::set<int> listeningPorts;
@@ -46,7 +54,8 @@ int main(int argc, char **argv) {
                     Socket newSocket(port);
                     listeningSockets.push_back(newSocket);
                     listeningPorts.insert(port);
-                    std::cout << "   -> Prepared Socket on port " << listeningSockets.back().getPort() << " fd: " << listeningSockets.back().getFd() << std::endl;
+                    LOG_INFO("Prepared Socket on port " << listeningSockets.back().getPort() 
+                    << " fd: " << listeningSockets.back().getFd());
                 }
             }
         }
@@ -55,12 +64,12 @@ int main(int argc, char **argv) {
             throw std::runtime_error("No valid server ports found in config.");
         }
 
-        std::cout << YELLOW << "[Init] Starting EventLoop..." << RESET << std::endl;
+        LOG_INFO("Starting EventLoop...");
         EventLoop loop(listeningSockets);
         loop.run();
 
     } catch (const std::exception& e) {
-        std::cerr << RED << "Error: " << e.what() << RESET << std::endl;
+        LOG_ERROR("Fatal crash: " << e.what());
         return 1;
     }
 
