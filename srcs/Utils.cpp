@@ -15,19 +15,6 @@ std::string Utils::get_http_date()
 	return (std::string(buffer));
 }
 
-/* Normalizes request paths by removing query strings and setting default file. */
-std::string Utils::normalize_path(const std::string &path)
-{
-	std::string normalized = path;
-	size_t query_start = normalized.find("?");
-	if (query_start != std::string::npos)
-		normalized = normalized.substr(0, query_start);
-
-	// if (normalized.empty() || normalized == "/")
-	// 	normalized = ConfigParser::getInstance().getId(0).index[0];
-
-	return normalized;
-}
 
 std::string Utils::extract_boundary(const std::string& content_type)
 {
