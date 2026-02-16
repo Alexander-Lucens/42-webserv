@@ -51,7 +51,6 @@ class Response {
 
 		// Helper 
 		std::string			reason_message(int code);
-		Response 			response_body(const int &error_code, const std::string &body);
 		Response			handle_post_submit(const Request& request);
 		Response			handle_post_upload(const Request& request);
 
@@ -74,13 +73,15 @@ class Response {
 
 		// Requests
 		Response 		handle_get(const Request &request);
-		Response		handle_get_cgi(const Request& request, Language lang);
+		// Response		handle_get_cgi(const Request& request, Language lang);
 		Response 		handle_post(const Request &request);
-		Response		handle_post_cgi(const Request& request, Language lang);
+		// Response		handle_post_cgi(const Request& request, Language lang);
 		Response		handle_delete(const Request &request);
 
 		Response 		handle_error(const int error_code);
 		Response 		handle_request(const Request &request);
+
+		Response 		response_body(const int &error_code, const std::string &body);
 
 		// Setter
 		void 			set_status(int status_code);
@@ -89,6 +90,4 @@ class Response {
 
 		// Serializer 
 		std::string serialize();
-
-
 };
