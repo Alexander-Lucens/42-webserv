@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: akuzmin <akuzmin@student.42berlin.de>      +#+  +:+       +#+         #
+#    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/02/06 16:37:08 by akuzmin          ###   ########.fr        #
+#    Updated: 2026/02/16 14:57:49 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,9 +20,9 @@ INCLUDE     := includes
 SRC_DIR		:= srcs
 
 SRCS        :=  $(SRC_DIR)/main.cpp \
-                $(SRC_DIR)/shared/Request.cpp $(SRC_DIR)/shared/Response.cpp $(SRC_DIR)/shared/FileHandler.cpp $(SRC_DIR)/shared/Utils.cpp \
-                $(SRC_DIR)/part1/Socket.cpp $(SRC_DIR)/part1/EventLoop.cpp $(SRC_DIR)/part1/ConfigParser.cpp \
-                $(SRC_DIR)/part2/Connection.cpp
+                $(SRC_DIR)/Request.cpp $(SRC_DIR)/Response.cpp $(SRC_DIR)/FileHandler.cpp $(SRC_DIR)/Utils.cpp \
+                $(SRC_DIR)/Socket.cpp $(SRC_DIR)/EventLoop.cpp $(SRC_DIR)/ConfigParser.cpp \
+                $(SRC_DIR)/Connection.cpp
                 
 TEST_SRCS	:= tests/test_response.cpp \
                tests/test_request.cpp \
