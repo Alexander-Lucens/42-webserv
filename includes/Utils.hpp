@@ -11,7 +11,6 @@
 class Utils {
 	public:
 	static std::string get_http_date();
-	static std::string normalize_path(const std::string& path);
 	static std::string extract_boundary(const std::string& content_type);
 	static std::string lower_case(std::string str);
 	static std::string upper_case(std::string str);
