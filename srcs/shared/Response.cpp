@@ -1,8 +1,10 @@
 # include "Response.hpp"
 # include "Request.hpp"
+# include "CGI.hpp"
 #include <sys/types.h>
 #include <sys/wait.h>
 
+// enum Language {PYTHON, RUST};
 
 /* 
 HttpRequest (from parser)
@@ -94,52 +96,60 @@ Response Response::handle_get(const Request& request)
 	std::string normalized_html_path = request.uri; // Utils::normalize_path(request.uri);
 	std::string file_path;
 
-	// Route /uploads/ to uploads directory
-	if (normalized_html_path.find("/uploads") == 0) 
-		file_path = "www" + normalized_html_path;
-	else 
+	if	(request.path.find(".py") != std::string::npos || request.path.find("python") != std::string::npos)
+		return handle_get_cgi(request, *this, PYTHON);
+	else if	(request.path.find(".rs") != std::string::npos || request.path.find("rust") != std::string::npos)
+		return handle_get_cgi(request, *this, RUST);
+	else
 	{
-		if (normalized_html_path == "/")
-		{
-			file_path = _config->root + "/" + _config->index[0];
-		} else {
-			file_path = _config->root + "/base_page" + normalized_html_path;
-		}
-	}
-	
-	std::cout << "DEBUG: normalized_html_path = [" << normalized_html_path << "]" << std::endl;
-	std::cout << "DEBUG: file_path = [" << file_path << "]" << std::endl;
 
-	if (!FileHandler::file_exists(file_path))
-		return handle_error(404);
-
-	// If it's a directory, list files
-    if (FileHandler::is_directory(file_path))
-	{
-		std::string index_file = file_path + "/" + _config->index[0];
-		if (FileHandler::file_exists(index_file))
-			file_path = index_file;
+		// Route /uploads/ to uploads directory
+		if (normalized_html_path.find("/uploads") == 0) 
+			file_path = "www" + normalized_html_path;
 		else 
 		{
-			std::string autoindex_html = FileHandler::handle_autoindex(normalized_html_path, file_path);
-			if (autoindex_html.empty())
-				return handle_error(403);
-			return response_body(200, autoindex_html);
-    	}
-	}
-	if (!FileHandler::is_readable(file_path))
-		return handle_error(403);
+			if (normalized_html_path == "/")
+			{
+				file_path = _config->root + "/" + _config->index[0];
+			} else {
+				file_path = _config->root + "/base_page" + normalized_html_path;
+			}
+		}
+		
+		std::cout << "DEBUG: normalized_html_path = [" << normalized_html_path << "]" << std::endl;
+		std::cout << "DEBUG: file_path = [" << file_path << "]" << std::endl;
 
-	std::string html_content = FileHandler::load_file(file_path);
-	if(html_content.empty())
-		return (handle_error(404)); 
+		if (!FileHandler::file_exists(file_path))
+			return handle_error(404);
 
-	response.set_status(200);
-	response.set_header("Date", Utils::get_http_date());
-	response.set_header("Server", SERVER);
-	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
-	response.set_body(html_content);
-	return (response);
+		// If it's a directory, list files
+		if (FileHandler::is_directory(file_path))
+		{
+			std::string index_file = file_path + "/" + _config->index[0];
+			if (FileHandler::file_exists(index_file))
+				file_path = index_file;
+			else 
+			{
+				std::string autoindex_html = FileHandler::handle_autoindex(normalized_html_path, file_path);
+				if (autoindex_html.empty())
+					return handle_error(403);
+				return response_body(200, autoindex_html);
+			}
+		}
+		if (!FileHandler::is_readable(file_path))
+			return handle_error(403);
+
+		std::string html_content = FileHandler::load_file(file_path);
+		if(html_content.empty())
+			return (handle_error(404)); 
+
+		response.set_status(200);
+		response.set_header("Date", Utils::get_http_date());
+		response.set_header("Server", SERVER);
+		response.set_header("Content-Type", FileHandler::find_content_type(file_path));
+		response.set_body(html_content);
+		return (response);
+		}
 }
 
 // Response Response::handle_post(const Request& request)
@@ -163,11 +173,11 @@ Response Response::handle_post(const Request& request)
     std::cout << "DEBUG handle_post: body size = [" << request.body.size() << "]" << std::endl;
     std::cout << "DEBUG handle_post: body = [" << request.body.substr(0, 100) << "...]" << std::endl;
     
-	if (!FileHandler::validate_content_length(request)) 
-	{
-		std::cout << "DEBUG: validate_content_length FAILED" << std::endl;
-		return handle_error(400);
-	}
+	// if (!FileHandler::validate_content_length(request)) 
+	// {
+	// 	std::cout << "DEBUG: validate_content_length FAILED" << std::endl;
+	// 	return handle_error(400);
+	// }
 
 	if (request.uri.find("/submit") == 0)
 		return handle_post_submit(request);
@@ -176,7 +186,10 @@ Response Response::handle_post(const Request& request)
 		return handle_post_upload(request);
 
 	if	(request.path.find(".py") != std::string::npos || request.path.find(".cgi") != std::string::npos)
-		return handle_post_cgi(request);
+		return handle_post_cgi(request, *this, PYTHON);
+
+	if	(request.path.find(".rs") != std::string::npos || request.path.find("rust") != std::string::npos)
+		return handle_post_cgi(request, *this, RUST);
 
 	return handle_error(405);
 }
@@ -345,93 +358,168 @@ Response Response::response_body(const int &error_code, const std::string &body)
 }
 
 
-Response Response::handle_post_cgi(const Request& request) {
-	int				pipefd_in[2];
-	int				pipefd_out[2];
-	int				pid;
-	int				exit_status;
-	std::size_t		already_written = 0;
-	char			buffer[1024];
-	ssize_t			bytes_read;
-	std::string		header;
-	std::string		output;
+// Response Response::handle_post_cgi(const Request& request, Language lang) {
+// 	int				pipefd_in[2];
+// 	int				pipefd_out[2];
+// 	int				pid;
+// 	int				exit_status;
+// 	std::size_t		already_written = 0;
+// 	char			buffer[1024];
+// 	ssize_t			bytes_read;
+// 	std::string		header;
+// 	std::string		output;
 
-	if (pipe(pipefd_in) == -1)
-		return handle_error(500);
+// 	if (pipe(pipefd_in) == -1)
+// 		return handle_error(500);
 
-	if (pipe(pipefd_out) == -1)
-		return handle_error(500);
-
-
-	pid = fork();
-	if (pid == -1)
-	{
-		close(pipefd_in[1]);
-		close(pipefd_out[0]);
-		close(pipefd_in[0]);
-		close(pipefd_out[1]);
-		return handle_error(500);
-	}
-
-	if (pid == 0) // child
-	{
-		// closing unused pipes
-		close(pipefd_in[1]);
-		close(pipefd_out[0]);
-
-		// redirecting pipes to stdin and stdout
-		dup2(pipefd_in[0], STDIN_FILENO);
-		dup2(pipefd_out[1], STDOUT_FILENO);
-
-			// closing fds that have been duplicated
-		close(pipefd_in[0]);
-		close(pipefd_out[1]);
+// 	if (pipe(pipefd_out) == -1)
+// 		return handle_error(500);
 
 
-		// write loop to send in ALL of the headers (which means I need a HTTP_HEADER transformer) all the time
+// 	pid = fork();
+// 	if (pid == -1)
+// 	{
+// 		close(pipefd_in[1]);
+// 		close(pipefd_out[0]);
+// 		close(pipefd_in[0]);
+// 		close(pipefd_out[1]);
+// 		return handle_error(500);
+// 	}
 
-		clearenv(); // start clean for safety - no injection possible
-		setenv("REQUEST_METHOD", request.method.c_str(), 1);
-		setenv("SCRIPT_NAME", request.path.c_str(), 1);
-		setenv("QUERY_STRING", request.query_string.c_str(), 1);
-		setenv("SERVER_PROTOCOL", request.version.c_str(), 1);
+// 	if (pid == 0) // child
+// 	{
+// 		// closing unused pipes
+// 		close(pipefd_in[1]);
+// 		close(pipefd_out[0]);
 
-		std::map<std::string, std::string> headers = request.getAllHeaders();
+// 		// redirecting pipes to stdin and stdout
+// 		dup2(pipefd_in[0], STDIN_FILENO);
+// 		dup2(pipefd_out[1], STDOUT_FILENO);
 
-		for (std::map<std::string, std::string>::iterator it = headers.begin();
-		it != headers.end();
-		++it)
-		{
-			header = "HTTP_" + Utils::upper_case(it->first);
-			setenv(header.c_str(), it->second.c_str(), 1);
-		}
-		execl("/opt/pyenv/shims/python3", "python3", request.path.c_str(), NULL); // 0 is path to Python instal, 1 is version, 2 is the script on server
+// 			// closing fds that have been duplicated
+// 		close(pipefd_in[0]);
+// 		close(pipefd_out[1]);
 
-		exit(1);
-	}
 
-	// parent
+// 		// write loop to send in ALL of the headers all the time
 
-	// closing unused pipes
-	close(pipefd_in[0]);
-	close(pipefd_out[1]);
+// 		clearenv(); // start clean for safety - no injection possible
+// 		setenv("REQUEST_METHOD", request.method.c_str(), 1);
+// 		setenv("SCRIPT_NAME", request.path.c_str(), 1);
+// 		setenv("QUERY_STRING", request.query_string.c_str(), 1);
+// 		setenv("SERVER_PROTOCOL", request.version.c_str(), 1);
 
-	while (already_written < request.body.size()) {
-		bytes_read = ::write(pipefd_in[1], request.body.data() + already_written, request.body.size() - already_written);
-		already_written += bytes_read;
-		if (bytes_read <= 0)
-			break;
-	}
+// 		std::map<std::string, std::string> headers = request.getAllHeaders();
 
-	// finished sending the job to Python
-	close(pipefd_in[1]);
+// 		for (std::map<std::string, std::string>::iterator it = headers.begin();
+// 		it != headers.end();
+// 		++it)
+// 		{
+// 			header = "HTTP_" + Utils::upper_case(it->first);
+// 			setenv(header.c_str(), it->second.c_str(), 1);
+// 		}
+// 		if (lang == PYTHON)
+// 			execl("/opt/pyenv/shims/python3", "python3", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL); // 0 is path to Python instal, 1 is arbitrary name, 2 is the script on server
+// 		else
+// 			execl("www/cgi-bin/rust_program", "rust_program", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL);
 
-	while ((bytes_read = ::read(pipefd_out[0], buffer, sizeof(buffer))) > 0) {
-		output.append(buffer, bytes_read);
-	}
+// 		exit(1);
+// 	}
 
-	close(pipefd_out[0]);
-	waitpid(pid, &exit_status, 0);
+// 	// parent
 
-	return response_body(200, output);
-}
+// 	// closing unused pipes
+// 	close(pipefd_in[0]);
+// 	close(pipefd_out[1]);
+
+// 	while (already_written < request.body.size()) {
+// 		bytes_read = ::write(pipefd_in[1], request.body.data() + already_written, request.body.size() - already_written);
+// 		already_written += bytes_read;
+// 		if (bytes_read <= 0)
+// 			break;
+// 	}
+
+// 	// finished sending the job to program/interpreter
+// 	close(pipefd_in[1]);
+
+// 	while ((bytes_read = ::read(pipefd_out[0], buffer, sizeof(buffer))) > 0) {
+// 		output.append(buffer, bytes_read);
+// 	}
+
+// 	close(pipefd_out[0]);
+// 	waitpid(pid, &exit_status, 0);
+
+// 	return response_body(200, output);
+// }
+
+
+// Response Response::handle_get_cgi(const Request& request, Language lang) {
+// 	int				pipefd_out[2];
+// 	int				pid;
+// 	int				exit_status;
+// 	char			buffer[1024];
+// 	ssize_t			bytes_read;
+// 	std::string		header;
+// 	std::string		output;
+
+// 	if (pipe(pipefd_out) == -1)
+// 		return handle_error(500);
+
+
+// 	pid = fork();
+// 	if (pid == -1)
+// 	{
+// 		close(pipefd_out[0]);
+// 		close(pipefd_out[1]);
+// 		return handle_error(500);
+// 	}
+
+// 	if (pid == 0) // child
+// 	{
+// 		// closing unused pipe
+// 		close(pipefd_out[0]);
+
+// 		// redirecting pipe to stdout
+// 		dup2(pipefd_out[1], STDOUT_FILENO);
+
+// 			// closing fd that has been duplicated
+// 		close(pipefd_out[1]);
+
+
+// 		clearenv(); // start clean for safety - no injection possible
+// 		setenv("REQUEST_METHOD", request.method.c_str(), 1);
+// 		setenv("SCRIPT_NAME", request.path.c_str(), 1);
+// 		setenv("QUERY_STRING", request.query_string.c_str(), 1);
+// 		setenv("SERVER_PROTOCOL", request.version.c_str(), 1);
+
+// 		std::map<std::string, std::string> headers = request.getAllHeaders();
+
+// 		for (std::map<std::string, std::string>::iterator it = headers.begin();
+// 		it != headers.end();
+// 		++it)
+// 		{
+// 			header = "HTTP_" + Utils::upper_case(it->first);
+// 			setenv(header.c_str(), it->second.c_str(), 1);
+// 		}
+// 		if (lang == PYTHON)
+// 			execl("/opt/pyenv/shims/python3", "python3", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL); // 0 is path to Python instal, 1 is arbitrary name, 2 is the script on server
+// 		else
+// 			execl("www/cgi-bin/rust_program", "rust_program", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL);
+
+// 		exit(1);
+// 	}
+
+// 	// parent
+
+// 	// closing unused pipe
+// 	close(pipefd_out[1]);
+
+// 	while ((bytes_read = ::read(pipefd_out[0], buffer, sizeof(buffer))) > 0) {
+// 		output.append(buffer, bytes_read);
+// 	}
+
+// 	close(pipefd_out[0]);
+// 	waitpid(pid, &exit_status, 0);
+
+// 	return response_body(200, output);
+// }
