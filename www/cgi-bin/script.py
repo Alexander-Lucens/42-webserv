@@ -4,10 +4,9 @@ from urllib.parse import parse_qs
 query = os.environ.get("QUERY_STRING", "")
 params = parse_qs(query)
 
-name = params.get("NAME", ["random person"])[0]
 
-print("Content-Type: text/plain")
-print()  # blank line
+name = params['name'][0]
+if not name or name == " ":
+	name = "world"
 
-# What's actually returned to the client
-print(f"Hello {name}!")
+print(f"<h1>Hello {name}!</h1>")

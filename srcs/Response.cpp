@@ -136,10 +136,10 @@ Response Response::handle_post(const Request& request)
 	if (request.uri.find("/upload") == 0)
 		return handle_post_upload(request);
 
-	if	(request.path.find(".py") != std::string::npos || request.path.find(".cgi") != std::string::npos)
+	if	(request.uri.find(".py") != std::string::npos || request.uri.find(".cgi") != std::string::npos)
 		return handle_post_cgi(request, *this, PYTHON);
 
-	if	(request.path.find(".rs") != std::string::npos || request.path.find("rust") != std::string::npos)
+	if	(request.uri.find(".rs") != std::string::npos || request.uri.find("rust") != std::string::npos)
 		return handle_post_cgi(request, *this, RUST);
 
 	return handle_error(405);
