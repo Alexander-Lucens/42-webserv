@@ -6,7 +6,7 @@
 #    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/02/16 16:24:11 by lkramer          ###   ########.fr        #
+#    Updated: 2026/02/17 16:27:55 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -34,7 +34,7 @@ TEST_SRCS	:= tests/test_response.cpp \
 # **************************************************************************** #
 
 CFLAGS      := -Wall -Wextra -Werror -std=c++98 -I$(INCLUDE)
-CC          := c++
+CC          := ulimit -n 65535 && c++
 RM          := rm -rf
 
 OBJ_DIR      := objs
