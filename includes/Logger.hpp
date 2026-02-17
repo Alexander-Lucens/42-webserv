@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <fstream>
 #include <sstream>
 #include "Colors.hpp"
 
@@ -15,6 +16,9 @@ enum LogLevel {
 
 class Logger {
     public:
+        static void init(const std::string& prefix);
+        static void close();
+
         static void log(LogLevel level, const std::string& message);
         static void info(const std::string& message);
         static void debug(const std::string& message);
@@ -23,7 +27,7 @@ class Logger {
 
     private:
         Logger();
-        static std::string getTimestamp();
+        static std::string getTimestamp(std::string format);
         static std::string levelToString(LogLevel level);
         static std::string levelToColor(LogLevel level);
 };

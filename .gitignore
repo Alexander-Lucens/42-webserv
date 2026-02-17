@@ -171,3 +171,7 @@ $RECYCLE.BIN/
 
 runTest
 webserv
+
+# Logs
+logs/
+*.log

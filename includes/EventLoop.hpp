@@ -13,13 +13,13 @@ class Connection;
 class EventLoop {
 	private:
 		int _epoll_fd;
-		std::vector<Socket> _serverSockets;
+		std::vector<Socket*> _serverSockets;
 		std::map<int, Connection*> _connections;
 
 	public:
 		/* ----- OCF ----- */
 		// EventLoop();
-		EventLoop(const std::vector<Socket>& sockets);
+		EventLoop(const std::vector<Socket*>& sockets);
 		~EventLoop();
 		EventLoop& operator=(const EventLoop &other);
 		/* ------------- */
