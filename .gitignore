@@ -175,3 +175,6 @@ webserv
 # Logs
 logs/
 *.log
+
+# 42 tester
+tester
