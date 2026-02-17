@@ -22,6 +22,7 @@
 #include "Socket.hpp"
 #include "EventLoop.hpp"
 
+
 int main(int argc, char **argv) {
     if (argc != 2) {
         std::cerr << "Usage: ./webserv [config_file]" << std::endl;
@@ -30,6 +31,7 @@ int main(int argc, char **argv) {
 
     std::string configPath = argv[1];
 
+       
     try {
         std::cout << YELLOW << "[Init] Parsing config: " << configPath << RESET << std::endl;
 
