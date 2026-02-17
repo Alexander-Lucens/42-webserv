@@ -10,15 +10,31 @@
     <h1>CGI Test</h1>
   	<p>Test your CGI script execution</p>
 
-	<div class="form-container">
-		<form method="POST" action="/cgi-bin/script.py">
-			<div style="margin: 30px 0;">
-				<label for="name">Enter your name:</label><br>
-				<input type="text" name="name" id="name" placeholder="e.g., John" required>
-			</div>
-			
-			<button type="submit" class="back-btn">Execute CGI</button>
-		</form>
+	<div style="display: flex; justify-content: center;">
+
+		<div class="form-container" style="margin: 0 10em">
+			<h2>Rust CGI</h2>
+			<form method="GET" action="/cgi-bin/rust_program">
+				<div style="margin: 30px 0;">
+					<label for="name">Enter your name:</label><br>
+					<input type="text" name="name" id="name" placeholder="e.g., John" required>
+				</div>
+				
+				<button type="submit" class="back-btn">Execute CGI - Rust</button>
+			</form>
+		</div>
+
+		<div class="form-container" style="margin: 0 10em">
+			<h2>Python CGI</h2>
+			<form method="GET" action="/cgi-bin/script.py">
+				<div style="margin: 30px 0;">
+					<label for="name">Enter your name:</label><br>
+					<input type="text" name="name" id="name" placeholder="e.g., John" required>
+				</div>
+				
+				<button type="submit" class="back-btn">Execute CGI - Python</button>
+			</form>
+		</div>
 	</div>
 
 	<div style="margin-top: 30px;">

@@ -45,3 +45,15 @@ std::string Utils::upper_case(std::string str)
 	std::transform(str.begin(), str.end(), str.begin(), to_upper_safe);
 	return str;
 }
+
+std::string Utils::dash_to_underscore(std::string str)
+{
+	for (std::string::size_type i = 0; i < str.size(); ++i)
+	{
+		if (str[i] == '-')
+		{
+			str[i] = '_';
+		}
+	}
+	return str;
+}

@@ -14,4 +14,5 @@ class Utils {
 	static std::string extract_boundary(const std::string& content_type);
 	static std::string lower_case(std::string str);
 	static std::string upper_case(std::string str);
+	static std::string dash_to_underscore(std::string str);
 };

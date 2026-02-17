@@ -13,13 +13,16 @@ RUN apt-get update && apt-get install -y \
     wget \
     telnet \
     netcat-openbsd \
-    siege \
     net-tools \
     python3 \
     php-cgi \
     procps \
     lsof \
     vim \
+	clang-format \
+	clang-tidy \
+	cppcheck \
+	siege \
     nano \
     && rm -rf /var/lib/apt/lists/*
 

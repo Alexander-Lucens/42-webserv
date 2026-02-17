@@ -53,8 +53,8 @@ bool Connection::on_writable() {
     if (this->write_buffer.empty()) {
         return true; 
     }
-	std::cout << BLUE << "ON_WRITABLE: Sending " << this->write_buffer.size() << " bytes" << RESET << std::endl;
-	std::cout << BLUE << "First 200 chars: [" << this->write_buffer.substr(0, 200) << "]" << RESET << std::endl;
+	// std::cout << BLUE << "ON_WRITABLE: Sending " << this->write_buffer.size() << " bytes" << RESET << std::endl;
+	// std::cout << BLUE << "First 200 chars: [" << this->write_buffer.substr(0, 200) << "]" << RESET << std::endl;
     
     ssize_t bytes_sent = write(_fd, this->write_buffer.c_str(), this->write_buffer.size());
 

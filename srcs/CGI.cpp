@@ -1,5 +1,6 @@
 
 # include "CGI.hpp"
+# include <unistd.h>
 
 Response handle_post_cgi(const Request& request, Response& response, Language lang) {
 	int				pipefd_in[2];
@@ -11,6 +12,11 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 	ssize_t			bytes_read;
 	std::string		header;
 	std::string		output;
+
+	char path[1024];
+	if (getcwd(path, sizeof(path)) == NULL)
+		return response.handle_error(500);
+
 
 	if (pipe(pipefd_in) == -1)
 		return response.handle_error(500);
@@ -46,7 +52,7 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 
 		// write loop to send in ALL of the headers all the time
 
-		clearenv(); // start clean for safety - no injection possible
+		// clearenv(); // start clean for safety - no injection possible
 		setenv("REQUEST_METHOD", request.method.c_str(), 1);
 		setenv("SCRIPT_NAME", request.path.c_str(), 1);
 		setenv("QUERY_STRING", request.query_string.c_str(), 1);
@@ -58,13 +64,15 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 		it != headers.end();
 		++it)
 		{
-			header = "HTTP_" + Utils::upper_case(it->first);
+			Utils::dash_to_underscore(it->first);
+			Utils::upper_case(it->first);
+			header = "HTTP_" +  it->first;
 			setenv(header.c_str(), it->second.c_str(), 1);
 		}
 		if (lang == PYTHON)
-			execl("/opt/pyenv/shims/python3", "python3", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL); // 0 is path to Python instal, 1 is arbitrary name, 2 is the script on server
+			execl("/opt/pyenv/shims/python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL); // 0 is path to Python instal, 1 is arbitrary name, 2 is the script on server
 		else
-			execl("www/cgi-bin/rust_program", "rust_program", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL);
+			execl("www/cgi-bin/rust_program", "rust_program", (std::string(path) + "/www" + request.path).c_str(), NULL);
 
 		exit(1);
 	}
@@ -105,6 +113,10 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 	std::string		header;
 	std::string		output;
 
+	char path[1024];
+	if (getcwd(path, sizeof(path)) == NULL)
+		return response.handle_error(500);
+
 	if (pipe(pipefd_out) == -1)
 		return response.handle_error(500);
 
@@ -141,13 +153,16 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 		it != headers.end();
 		++it)
 		{
-			header = "HTTP_" + Utils::upper_case(it->first);
+			std::string key = it->first;
+			key = Utils::upper_case(key);
+			key = Utils::dash_to_underscore(key);
+			header = "HTTP_" +  key;
 			setenv(header.c_str(), it->second.c_str(), 1);
 		}
 		if (lang == PYTHON)
-			execl("/opt/pyenv/shims/python3", "python3", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL); // 0 is path to Python instal, 1 is arbitrary name, 2 is the script on server
+			execl("/opt/pyenv/shims/python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL); // 0 is path to Python instal, 1 is arbitrary name, 2 is the script on server
 		else
-			execl("www/cgi-bin/rust_program", "rust_program", ("/home/amargolo/Desktop/webserv/www" + request.path).c_str(), NULL);
+			execl("www/cgi-bin/rust_program", "rust_program", (std::string(path) + "/www" + request.path).c_str(), NULL);
 
 		exit(1);
 	}
