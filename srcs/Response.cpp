@@ -136,10 +136,10 @@ Response Response::handle_post(const Request& request)
 	if (request.uri.find("/upload") == 0)
 		return handle_post_upload(request);
 
-	if	(request.path.find(".py") != std::string::npos || request.path.find(".cgi") != std::string::npos)
+	if	(request.uri.find(".py") != std::string::npos || request.uri.find(".cgi") != std::string::npos)
 		return handle_post_cgi(request, *this, PYTHON);
 
-	if	(request.path.find(".rs") != std::string::npos || request.path.find("rust") != std::string::npos)
+	if	(request.uri.find(".rs") != std::string::npos || request.uri.find("rust") != std::string::npos)
 		return handle_post_cgi(request, *this, RUST);
 
 	return handle_error(405);
@@ -170,7 +170,7 @@ Response Response::handle_post_upload(const Request& request)
 	if (file_content.empty())
 		return handle_error(400);
 
-	if (!FileHandler::save_uploaded_file("www/uploads/" + file_name, file_content))
+	if (!FileHandler::save_uploaded_file(_config->locations.find(request.uri)->second.root + "/" + file_name, file_content))
 		return handle_error(500);
 
 	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
@@ -262,18 +262,48 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
 
 std::string Response::file_path_check(const std::string &uri)
 {
-	std::string file_path = uri;
-	if (file_path.find("/uploads") != 0) 
-	{
-		if (file_path == "/")
-			file_path = _config->root + "/" + _config->index[0];
-		else
-			file_path = _config->root + "/base_page" + file_path;
-	}
-	else
-		file_path = "www" + file_path;
-	return file_path;
+    std::string file_path = uri;
+    
+    // Safety check
+    if (!_config) {
+		// LOGGER SHOULD BE HERE
+        std::cerr << "ERROR: _config is null!" << std::endl;
+        return "";
+    }
+    
+    if (file_path.find("/uploads") != 0) 
+    {
+        if (file_path == "/") {
+            if (_config->index.empty()) {
+				// LOGGER SHOULD BE HERE
+
+                std::cerr << "ERROR: _config->index is empty!" << std::endl;
+                return _config->root + "/index.html";  // fallback
+            }
+            file_path = _config->root + "/" + _config->index[0];
+        }
+        else
+            file_path = _config->root + "/base_page" + file_path;
+    }
+    else
+        file_path = _config->root + "/" + file_path;
+    return file_path;
 }
+
+// std::string Response::file_path_check(const std::string &uri)
+// {
+// 	std::string file_path = uri;
+// 	if (file_path.find("/uploads") != 0) 
+// 	{
+// 		if (file_path == "/")
+// 			file_path = _config->root + "/" + _config->index[0];
+// 		else
+// 			file_path = _config->root + "/base_page" + file_path;
+// 	}
+// 	else
+// 		file_path = _config->root + "/" +file_path;
+// 	return file_path;
+// }
 
 /* Sends response to socket (creates one liner) */
 void Response::set_body(const std::string &html_body)
