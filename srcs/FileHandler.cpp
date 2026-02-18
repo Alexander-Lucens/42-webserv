@@ -102,6 +102,7 @@ std::string FileHandler::find_content_type(const std::string &content_file_path)
 	return ("text/html");
 	}
 
+// ? Do not understan on mearging what was different, save 2 of them ?
 bool FileHandler::validate_content_length(const Request &request)
 {
 	std::string content_length_val = request.getHeader("Content-Length");

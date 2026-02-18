@@ -15,19 +15,6 @@ std::string Utils::get_http_date()
 	return (std::string(buffer));
 }
 
-/* Normalizes request paths by removing query strings and setting default file. */
-std::string Utils::normalize_path(const std::string &path)
-{
-	std::string normalized = path;
-	size_t query_start = normalized.find("?");
-	if (query_start != std::string::npos)
-		normalized = normalized.substr(0, query_start);
-
-	// if (normalized.empty() || normalized == "/")
-	// 	normalized = ConfigParser::getInstance().getId(0).index[0];
-
-	return normalized;
-}
 
 std::string Utils::extract_boundary(const std::string& content_type)
 {
@@ -56,5 +43,17 @@ std::string Utils::lower_case(std::string str)
 std::string Utils::upper_case(std::string str)
 {
 	std::transform(str.begin(), str.end(), str.begin(), to_upper_safe);
+	return str;
+}
+
+std::string Utils::dash_to_underscore(std::string str)
+{
+	for (std::string::size_type i = 0; i < str.size(); ++i)
+	{
+		if (str[i] == '-')
+		{
+			str[i] = '_';
+		}
+	}
 	return str;
 }

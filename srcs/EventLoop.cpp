@@ -120,6 +120,7 @@ void EventLoop::run() {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
+                            continue;
                         }
                     }
                     if (events[i].events & EPOLLOUT) {
@@ -128,7 +129,7 @@ void EventLoop::run() {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
-							continue;
+                            continue;
                         } // Implement logic to push data in connection back
                     }
                 }

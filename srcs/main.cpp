@@ -24,6 +24,7 @@
 #include "EventLoop.hpp"
 #include "Logger.hpp"
 
+
 int main(int argc, char **argv) {
     int status = 0;
     if (argc != 2) {
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
     Logger::init("webserv");
     std::vector<Socket*> listeningSockets;
 
+       
     try {
         LOG_INFO("Starting web server...");
         LOG_INFO("Parsing config: " << configPath);
