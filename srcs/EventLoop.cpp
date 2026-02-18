@@ -9,7 +9,7 @@
 // 	}
 // };
 
-EventLoop::EventLoop(const std::vector<Socket>& sockets) : _serverSockets(sockets) {
+EventLoop::EventLoop(const std::vector<Socket*>& sockets) : _serverSockets(sockets) {
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd == -1) {
 		throw std::runtime_error("Failed to create epoll file descriptor");
@@ -39,7 +39,7 @@ EventLoop::~EventLoop() {
 
 void EventLoop::init() {
     for (size_t i = 0; i < _serverSockets.size(); i++) {
-        int fd = _serverSockets[i].getFd();
+        int fd = _serverSockets[i]->getFd();
         struct epoll_event event;
         event.events = EPOLLIN;
         event.data.fd = fd;
@@ -86,9 +86,9 @@ void EventLoop::run() {
             bool isServerSocket = false;
             int port = -1;
             for (size_t j = 0; j < _serverSockets.size(); ++j) {
-                if (current_fd == _serverSockets[j].getFd()) {
+                if (current_fd == _serverSockets[j]->getFd()) {
                     isServerSocket = true;
-                    port = _serverSockets[j].getPort();
+                    port = _serverSockets[j]->getPort();
                     break;
                 }
             }
@@ -120,7 +120,7 @@ void EventLoop::run() {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
-							continue;
+                            continue;
                         }
                     }
                     if (events[i].events & EPOLLOUT) {
@@ -129,7 +129,7 @@ void EventLoop::run() {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
-							continue;
+                            continue;
                         } // Implement logic to push data in connection back
                     }
                 }

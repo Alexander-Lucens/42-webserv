@@ -16,39 +16,50 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <sstream>
 
 #include "Colors.hpp"
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "EventLoop.hpp"
+#include "Logger.hpp"
 
 
 int main(int argc, char **argv) {
+    int status = 0;
     if (argc != 2) {
         std::cerr << "Usage: ./webserv [config_file]" << std::endl;
         return 1;
     }
-
     std::string configPath = argv[1];
+    
+    Logger::init("webserv");
+    std::vector<Socket*> listeningSockets;
 
        
     try {
-        std::cout << YELLOW << "[Init] Parsing config: " << configPath << RESET << std::endl;
+        LOG_INFO("Starting web server...");
+        LOG_INFO("Parsing config: " << configPath);
 
         ConfigParser &parser = ConfigParser::get_instance();
-        const std::vector<ServerConfig> &servers = parser.parse(configPath);
+        std::vector<ServerConfig> servers = parser.parse(configPath);
+        LOG_INFO("Configuration parsed successfully.");
 
-        std::vector<Socket> listeningSockets;
+        if (servers.empty()) {
+            throw std::runtime_error("No servers defined in configuration.");
+        }
+
         std::set<int> listeningPorts;
 
         for (size_t i = 0; i < servers.size(); ++i) {
             for (size_t j = 0; j < servers[i].ports.size(); ++j) {
                 int port = servers[i].ports[j];
                 if (listeningPorts.find(port) == listeningPorts.end()) {
-                    Socket newSocket(port);
+                    Socket* newSocket = new Socket(port);
                     listeningSockets.push_back(newSocket);
                     listeningPorts.insert(port);
-                    std::cout << "   -> Prepared Socket on port " << listeningSockets.back().getPort() << " fd: " << listeningSockets.back().getFd() << std::endl;
+                    LOG_INFO("Prepared Socket on port " << listeningSockets.back()->getPort() 
+                    << " fd: " << listeningSockets.back()->getFd());
                 }
             }
         }
@@ -57,14 +68,18 @@ int main(int argc, char **argv) {
             throw std::runtime_error("No valid server ports found in config.");
         }
 
-        std::cout << YELLOW << "[Init] Starting EventLoop..." << RESET << std::endl;
+        LOG_INFO("Starting EventLoop...");
         EventLoop loop(listeningSockets);
         loop.run();
 
     } catch (const std::exception& e) {
-        std::cerr << RED << "Error: " << e.what() << RESET << std::endl;
-        return 1;
+        LOG_ERROR("Fatal crash: " << e.what());
+        status = 1;
     }
 
-    return 0;
+    for (size_t i = 0; i < listeningSockets.size(); ++i) {
+        delete listeningSockets[i];
+    }
+
+    return status;
 }
