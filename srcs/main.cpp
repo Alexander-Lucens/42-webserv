@@ -24,8 +24,21 @@
 #include "EventLoop.hpp"
 #include "Logger.hpp"
 
+#include <csignal>
+
+volatile sig_atomic_t g_running = 1;
+
+void handle_signal(int sig) {
+    (void)sig;
+    g_running = 0;
+}
+
 
 int main(int argc, char **argv) {
+
+    signal(SIGINT, handle_signal);
+    signal(SIGTERM, handle_signal);
+
     int status = 0;
     if (argc != 2) {
         std::cerr << "Usage: ./webserv [config_file]" << std::endl;
@@ -71,6 +84,16 @@ int main(int argc, char **argv) {
         LOG_INFO("Starting EventLoop...");
         EventLoop loop(listeningSockets);
         loop.run();
+
+        std::string inputExit;
+        if (std::cin >> inputExit && inputExit == "exit") {
+            g_running = 0;
+            LOG_INFO("Exit command received. Shutting down...");
+        }
+
+        if (!g_running) {
+            LOG_INFO("Shutting down gracefully...");
+        }
 
     } catch (const std::exception& e) {
         LOG_ERROR("Fatal crash: " << e.what());

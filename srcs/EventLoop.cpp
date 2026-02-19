@@ -1,13 +1,9 @@
 #include "EventLoop.hpp"
 #include <sys/epoll.h>
+#include <cerrno>
+#include <csignal>
 
-/* ----- OCF ----- */
-// EventLoop::EventLoop() {
-//     _epoll_fd = epoll_create1(0);
-// 	if (_epoll_fd == -1) {
-// 		throw std::runtime_error("Failed to create epoll file descriptor");
-// 	}
-// };
+extern volatile sig_atomic_t g_running;
 
 EventLoop::EventLoop(const std::vector<Socket*>& sockets) : _serverSockets(sockets) {
 	_epoll_fd = epoll_create1(0);
@@ -23,19 +19,6 @@ EventLoop::~EventLoop() {
 	}
 	if (_epoll_fd != -1) close(_epoll_fd);
 }
-
-// void EventLoop::addSocket(Socket& serverSocket) {
-//     int fd = serverSocket.getFd();
-//     struct epoll_event event;
-//     event.events = EPOLLIN;
-//     event.data.fd = fd;
-
-//     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
-//         throw std::runtime_error("Failed to add server socket to epoll");
-//     }
-
-//     _serverSockets.push_back(serverSocket);
-// }
 
 void EventLoop::init() {
     for (size_t i = 0; i < _serverSockets.size(); i++) {
@@ -76,9 +59,14 @@ void EventLoop::run() {
 
     std::cout << "Server is running. Waiting..." << std::endl;
 
-    while (true) {
+    while (g_running) {
         int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
-        if (num_events == -1) throw std::runtime_error("epoll_wait failed");
+        if (num_events == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::runtime_error("epoll_wait failed");
+        }
 
         for (int i = 0; i < num_events; ++i) {
             int current_fd = events[i].data.fd;
@@ -130,7 +118,7 @@ void EventLoop::run() {
                             delete conn;
                             _connections.erase(current_fd);
                             continue;
-                        } // Implement logic to push data in connection back
+                        }
                     }
                 }
             }

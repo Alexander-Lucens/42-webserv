@@ -247,7 +247,10 @@ Response Response::handle_error(const int error_code)
 
 Response Response::handle_directory(const std::string &uri, std::string &file_path)
 {
-	std::string index_file = file_path + "/" + _config->index[0];
+	std::string index_file = file_path + "/";
+	if (!_config->index.empty()) {
+		index_file  += _config->index[0];
+	}
 	if (FileHandler::file_exists(index_file))
 	{
 		file_path = index_file;
@@ -289,21 +292,6 @@ std::string Response::file_path_check(const std::string &uri)
         file_path = _config->root + "/" + file_path;
     return file_path;
 }
-
-// std::string Response::file_path_check(const std::string &uri)
-// {
-// 	std::string file_path = uri;
-// 	if (file_path.find("/uploads") != 0) 
-// 	{
-// 		if (file_path == "/")
-// 			file_path = _config->root + "/" + _config->index[0];
-// 		else
-// 			file_path = _config->root + "/base_page" + file_path;
-// 	}
-// 	else
-// 		file_path = _config->root + "/" +file_path;
-// 	return file_path;
-// }
 
 /* Sends response to socket (creates one liner) */
 void Response::set_body(const std::string &html_body)
