@@ -13,4 +13,5 @@ docker compose exec ${SVC_NAME} bash
 
 echo "🛑 Stopping container..."
 rm -rf logs
+make fclean
 docker compose down

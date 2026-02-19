@@ -68,11 +68,7 @@ jobs:
     # Check how it performs under load, expects min 95% success rate
     - name: Run Load Test
       run: |
-        ./webserv tests/configs/simple.conf &
-        SERVER_PID=$!
-        sleep 5
         ./tests/scripts/test_load.sh
-        kill $SERVER_PID
 
     # Check for memory leaks with valgrind
     - name: Run Valgrind Test
