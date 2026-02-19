@@ -70,4 +70,4 @@ jobs:
     # Check for memory leaks with valgrind
     - name: Run Valgrind Test
       run: |
-        ./tests/scripts/test_valgrind.sh
+        ./tests/scripts/test_memory.sh
