@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>webserv</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<h1>Welcome to webserv</h1>
+	
+	<p>Browse and download files from the server</p>
+	
+	<div class="form-container">
+			<div style="margin-top: 30px;">
+		<a href="/uploads/"><button type="button" class="back-btn">Browse Files</button></a>
+			</div>
+	</div>
+	<div class="form-container">
+			<div style="margin-top: 30px;">
+		<a href="delete.html"><button type="button" class="back-btn">Delete Files</button></a>
+			</div>
+	</div>
+	<div class="form-container">
+			<div style="margin-top: 30px;">
+		<a href="upload.html"><button type="button" class="back-btn">Upload Files</button></a>
+			</div>
+	</div>
+	<div class="form-container">
+			<div style="margin-top: 30px;">
+		<a href="/old-page"><button type="button" class="back-btn">Redirect</button></a>
+			</div>
+	</div>
+	<div class="form-container">
+			<div style="margin-top: 30px;">
+		<a href="/cgi.html"><button type="button" class="back-btn">CGI</button></a>
+			</div>
+	</div>
+	<div class="form-container">
+			<div style="margin-top: 30px;">
+		<a href="submit.html"><button type="button" class="back-btn">Submit Files</button></a>
+			</div>
+	</div>
+	<div class="form-container">
+	<div style="margin-top: 30px;">
+		<a href="/error-404"><button type="button" class="back-btn">Test 404 Error</button></a>
+	</div>
+	</div>
+
+	<div class="form-container">
+		<div style="margin-top: 30px;">
+			<a href="/error-403"><button type="button" class="back-btn">Test 403 Error</button></a>
+		</div>
+	</div>
+
+	<div class="form-container">
+		<div style="margin-top: 30px;">
+			<a href="/error-400"><button type="button" class="back-btn">Test 400 Error</button></a>
+		</div>
+	</div>
+
+
+	
+	<footer>
+		<p>&copy; 2026 webserv | Developed by Aleksandr Kuzmin | Antoine Margoloff | Lara Krämer</p>
+	</footer>
+</body>
+</html>

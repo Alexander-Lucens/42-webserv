@@ -34,7 +34,7 @@ TEST_SRCS	:= tests/test_response.cpp \
 # **************************************************************************** #
 
 CFLAGS      := -Wall -Wextra -Werror -std=c++98 -I$(INCLUDE)
-CC          := ulimit -n 65535 && c++
+CC          := c++
 RM          := rm -rf
 
 OBJ_DIR      := objs

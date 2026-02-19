@@ -6,7 +6,7 @@ on:
       - main
       - develop
       - prod
-      - alex/connect
+      - feature/sig+log+cicd
   pull_request:
     branches:
       - main
@@ -24,35 +24,57 @@ jobs:
     - name: Set up C environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential valgrind clang-format clang-tidy cppcheck libclang-18-dev python3-clang-18
+        sudo apt-get install -y build-essential valgrind clang-format clang-tidy cppcheck libclang-18-dev python3-clang-18 siege
 
     # Compilation check
     - name: Compile Project
       run: make re
 
     # Check if its runinig
-    # - name: Run Smoke Test
-    #   run: |
-    #     ./webserv tests/configs/simple.conf &
-    #     SERVER_PID=$!
+    - name: Run Smoke Test
+      run: |
+        ./webserv tests/configs/simple.conf &
+        SERVER_PID=$!
         
-    #     sleep 2
+        sleep 2
         
-    #     echo "Testing connection..."
-    #     if curl -v "http://localhost:8080/" \
-    #       -H "Host: localhost:8080" \
-    #       -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
-    #       -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" \
-    #       -H "Accept-Language: en-US,en;q=0.9" \
-    #       -H "Accept-Encoding: gzip, deflate, br" \
-    #       -H "Connection: keep-alive" ; then
-    #       echo "✅ Server replied successfully"
-    #       kill $SERVER_PID
-    #       exit 0
-    #     else
-    #       echo "❌ Server timed out or refused connection"
-    #       kill $SERVER_PID
-    #       exit 1
-    #     fi
-    # Require valid response to get output
+        echo "Testing connection..."
+        if curl -v "http://localhost:9090/" \
+          -H "Host: localhost:9090" \
+          -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+          -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" \
+          -H "Accept-Language: en-US,en;q=0.9" \
+          -H "Accept-Encoding: gzip, deflate, br" \
+          -H "Connection: keep-alive" ; then
+          echo "✅ Server replied successfully"
+          kill $SERVER_PID
+          exit 0
+        else
+          echo "❌ Server timed out or refused connection"
+          kill $SERVER_PID
+          exit 1
+        fi
+
+
+    # Check if its runinig and have valid response
+    - name: Run Response Test
+      run: |
+        ./webserv tests/configs/simple.conf &
+        SERVER_PID=$!
+        sleep 5
+        ./tests/scripts/test_response.sh
+        kill $SERVER_PID
     
+    # Check how it performs under load, expects min 95% success rate
+    - name: Run Load Test
+      run: |
+        ./webserv tests/configs/simple.conf &
+        SERVER_PID=$!
+        sleep 5
+        ./tests/scripts/test_load.sh
+        kill $SERVER_PID
+
+    # Check for memory leaks with valgrind
+    - name: Run Valgrind Test
+      run: |
+        ./tests/scripts/test_valgrind.sh
