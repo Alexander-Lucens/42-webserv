@@ -5,13 +5,11 @@ on:
     branches:
       - main
       - develop
-      - prod
       - feature/sig+log+cicd
   pull_request:
     branches:
       - main
       - develop
-      - prod
 
 jobs:
   build-and-test:
