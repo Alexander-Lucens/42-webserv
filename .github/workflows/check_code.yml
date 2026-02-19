@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - prod
       - feature/sig+log+cicd
   pull_request:
     branches:
       - main
       - develop
+      - prod
 
 jobs:
   build-and-test:
@@ -57,12 +59,8 @@ jobs:
     # Check if its runinig and have valid response
     - name: Run Response Test
       run: |
-        ./webserv tests/configs/simple.conf &
-        SERVER_PID=$!
-        sleep 5
         ./tests/scripts/test_response.sh
-        kill $SERVER_PID
-    
+        
     # Check how it performs under load, expects min 95% success rate
     - name: Run Load Test
       run: |
