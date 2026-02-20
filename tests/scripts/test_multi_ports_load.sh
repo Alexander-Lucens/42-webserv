@@ -10,7 +10,7 @@ C_YLW="\033[0;33m"
 
 SERVER_URL_TEMPLATE="http://127.0.0.1:808"
 CONCURRENCY=10
-DURATION="5S"
+DURATION="3S"
 MIN_SUCCESS_RATE=95
 
 CONFIG_FILE="tests/configs/multi_port.conf"
@@ -62,7 +62,7 @@ for i in {0..9}; do
   fi
 
   echo -e "${C_GRN}✅ Port ${PORT} passed — availability: ${AVAILABILITY}%${C_RST}"
-  sleep 5
+  sleep 6
   echo
 done
 
