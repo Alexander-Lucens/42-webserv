@@ -18,27 +18,32 @@
 #include <cerrno>
 #include <sstream>
 
-#include "Colors.hpp"
-#include "ConfigParser.hpp"
-#include "Socket.hpp"
-#include "EventLoop.hpp"
-#include "Logger.hpp"
+// #include "Colors.hpp"
+// #include "ConfigParser.hpp"
+// #include "Socket.hpp"
+// #include "EventLoop.hpp"
+// #include "Logger.hpp"
 #include "Server.hpp"
 
 #include <csignal>
+#include <sys/wait.h>
 
-volatile sig_atomic_t g_running = 1;
+volatile std::sig_atomic_t g_running = 1;
 
 void handle_signal(int sig) {
     (void)sig;
     g_running = 0;
 }
 
+void handle_sigchld(int sig) {
+    (void)sig;
+    while(waitpid(-1, NULL, WNOHANG) > 0);
+}
 
 int main(int argc, char **argv) {
-
-    signal(SIGINT, handle_signal);
-    signal(SIGTERM, handle_signal);
+    std::signal(SIGINT, handle_signal);
+    std::signal(SIGTERM, handle_signal);
+    std::signal(SIGCHLD, handle_sigchld);
 
     int status = 0;
     if (argc != 2) {

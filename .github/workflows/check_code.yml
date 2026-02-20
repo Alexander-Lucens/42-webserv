@@ -62,12 +62,16 @@ jobs:
         ./tests/scripts/test_response.sh
         
     # Check how it performs under load, expects min 95% success rate
-    # - name: Run Load Test
-    #   run: |
-    #     ./tests/scripts/test_load.sh
-    # OCCURED SOME ISSUE, NEED MORE TIME TO INVESTIGATE WHY
+    - name: Run Load Test for 10 seconds
+      run: |
+        ./tests/scripts/test_load.sh
 
     # Check for memory leaks with valgrind
     - name: Run Valgrind Test
       run: |
         ./tests/scripts/test_memory.sh
+
+    # Check load on 10 ports for 5 seconds each
+    - name: Run Multi ports Load Test for 5 seconds each
+      run: |
+        ./tests/scripts/test_multi_ports_load.sh

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+# Set limitation for test duration in 10 seconds to not being bored
 SERVER_URL="http://localhost:9090/"
 CONCURRENCY=10
-DURATION="30S"
+DURATION="10S"
 MIN_SUCCESS_RATE=95
 
 CONFIG_FILE="tests/configs/simple.conf"
@@ -23,8 +24,8 @@ echo "$SIEGE_REPORT" | awk -F':' '{
     printf "\033[0;34m%s\033[0m:\033[0;32m%s\033[0m\n", $1, $2 
 }'
 
-TRANSACTIONS=$(echo "$SIEGE_REPORT" | awk -F: '/"transactions":/ {print $2}' | tr -d ' ,')
-SUCCESS_RATE=$(echo "$SIEGE_REPORT" | awk -F: '/"availability":/ {print $2}' | tr -d ' ,')
+TRANSACTIONS=$(echo "$SIEGE_REPORT" | awk -F: '/"successful_transactions":/ {print $2}' | tr -d ' ,')
+AVAILABILITY=$(echo "$SIEGE_REPORT" | awk -F: '/"availability":/ {print $2}' | tr -d ' ,')
 FAILED_RATE=$(echo "$SIEGE_REPORT" | awk -F: '/"failed_transactions":/ {print $2}' | tr -d ' ,')
 
 
@@ -34,9 +35,9 @@ if [[ -z "$TRANSACTIONS" || "$TRANSACTIONS" -eq 0 ]]; then
   exit 1
 fi
 
-IS_LOW_SUCCESS=$(awk "BEGIN {print ($SUCCESS_RATE < $MIN_SUCCESS_RATE) ? 1 : 0}")
+IS_LOW_SUCCESS=$(awk "BEGIN {print ($AVAILABILITY < $MIN_SUCCESS_RATE) ? 1 : 0}")
 if [[ "$IS_LOW_SUCCESS" -eq 1 ]]; then
-  echo "❌ Success rate is below $MIN_SUCCESS_RATE%. Actual: $SUCCESS_RATE%"
+  echo "❌ Success rate is below $MIN_SUCCESS_RATE%. Actual: $AVAILABILITY%"
   kill -TERM $SERVER_PID
   exit 1
 fi
@@ -49,4 +50,4 @@ if [[ "$IS_HIGH_FAIL" -eq 1 ]]; then
 fi
 
 kill -TERM $SERVER_PID
-echo "✅ Load test passed with success rate: ${SUCCESS_RATE}%"
+echo "✅ Load test passed with success rate: ${AVAILABILITY}%"

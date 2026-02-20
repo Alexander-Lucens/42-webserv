@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SERVER_HPP
+#define SERVER_HPP
 
 #include <vector>
 #include <set>
@@ -7,8 +8,6 @@
 #include "ConfigParser.hpp"
 #include "Logger.hpp"
 #include "EventLoop.hpp"
-
-
 
 class Server {
 	private:
@@ -23,4 +22,6 @@ class Server {
 		~Server();
 
 		void start();
-}
+};
+
+#endif
