@@ -23,6 +23,7 @@
 #include "Socket.hpp"
 #include "EventLoop.hpp"
 #include "Logger.hpp"
+#include "Server.hpp"
 
 #include <csignal>
 
