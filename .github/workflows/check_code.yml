@@ -6,7 +6,7 @@ on:
       - main
       - develop
       - prod
-      - feature/sig+log+cicd
+      - feature/improving_main 
   pull_request:
     branches:
       - main
