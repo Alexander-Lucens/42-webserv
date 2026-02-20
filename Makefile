@@ -22,7 +22,7 @@ SRC_DIR		:= srcs
 SRCS        :=  $(SRC_DIR)/main.cpp \
                 $(SRC_DIR)/Request.cpp $(SRC_DIR)/Response.cpp $(SRC_DIR)/FileHandler.cpp $(SRC_DIR)/Utils.cpp \
                 $(SRC_DIR)/Socket.cpp $(SRC_DIR)/EventLoop.cpp $(SRC_DIR)/ConfigParser.cpp \
-                $(SRC_DIR)/Connection.cpp $(SRC_DIR)/CGI.cpp $(SRC_DIR)/Logger.cpp
+                $(SRC_DIR)/Connection.cpp $(SRC_DIR)/CGI.cpp $(SRC_DIR)/Logger.cpp $(SRC_DIR)/Server.cpp
                 
 TEST_SRCS	:= tests/test_response.cpp \
                tests/test_request.cpp \
