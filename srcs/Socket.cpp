@@ -14,7 +14,7 @@ Socket::Socket() : _fd(-1), _port(0) {
 }
 
 Socket::~Socket() {
-	if (_fd != -1) {
+	if (_fd >= 0) {
 		close(_fd);
 	}
 }
