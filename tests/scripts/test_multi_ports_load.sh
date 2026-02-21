@@ -27,8 +27,8 @@ echo -e "${C_YLW}Concurrency:${C_RST} $CONCURRENCY"
 echo -e "${C_YLW}Duration:${C_RST} $DURATION"
 echo
 
-# HERE at CI change 9 --> 3. At PC could be tested with 9
-for i in {0..3}; do
+# HERE at CI change 9 --> 2. At PC could be tested with 9
+for i in {0..2}; do
   PORT="808$i"
   URL="${SERVER_URL_TEMPLATE}${i}/"
 
