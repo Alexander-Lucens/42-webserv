@@ -8,9 +8,10 @@ C_BLU="\033[0;34m"
 C_PUR="\033[0;35m"
 C_YLW="\033[0;33m"
 
+# AT GitHub Actions run max 4, other way its dont allocate enought resourcet to handle it
 SERVER_URL_TEMPLATE="http://127.0.0.1:808"
 CONCURRENCY=10
-DURATION="3S"
+DURATION="5S"
 MIN_SUCCESS_RATE=95
 
 CONFIG_FILE="tests/configs/multi_port.conf"
@@ -26,7 +27,8 @@ echo -e "${C_YLW}Concurrency:${C_RST} $CONCURRENCY"
 echo -e "${C_YLW}Duration:${C_RST} $DURATION"
 echo
 
-for i in {0..9}; do
+# HERE at CI change 9 --> 3. At PC could be tested with 9
+for i in {0..3}; do
   PORT="808$i"
   URL="${SERVER_URL_TEMPLATE}${i}/"
 
@@ -35,7 +37,8 @@ for i in {0..9}; do
   RESULT=$(siege -c "$CONCURRENCY" -t "$DURATION" "$URL" --no-parser 2>&1)
 
   SIEGE_REPORT=$(echo "$RESULT" | awk '/\{/{flag=1; next} /\}/{flag=0} flag')
-  AVAILABILITY=$(echo "$SIEGE_REPORT" | awk -F: '/"availability":/ {print $2}' | tr -d ' ,')
+  AVAILABILITY=$(echo "$SIEGE_REPORT" | awk -F: '/"availability":/ {print $2}' | tr -d ' ,' | tr -d '\t')
+  TRANSACTIONS=$(echo "$SIEGE_REPORT" | awk -F: '/"successful_transactions":/ {print $2}' | tr -d ' ,' | tr -d '\t')
 
   if [[ -z "$AVAILABILITY" ]]; then
     echo -e "${C_RED}❌ Failed to parse availability for port ${PORT}${C_RST}"
@@ -61,9 +64,11 @@ for i in {0..9}; do
     exit 1
   fi
 
-  echo -e "${C_GRN}✅ Port ${PORT} passed — availability: ${AVAILABILITY}%${C_RST}"
-  sleep 6
-  echo
+  echo -e "${C_GRN}✅ Port ${PORT} passed — availability: ${AVAILABILITY}% with ${TRANSACTIONS} transactions${C_RST}"
+  echo ""
+
+  sleep 5
+
 done
 
 kill -TERM "$SERVER_PID"
