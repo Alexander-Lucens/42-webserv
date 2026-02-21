@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Files | webserv</title>
+    <link rel="stylesheet" href="/www/statics/style.css">
+    <style>
+        #fileList {
+            background: rgba(128, 128, 128, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            font-family: monospace;
+            text-align: left;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button id="theme-toggle" class="theme-toggle-btn">
+            <span id="theme-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4.5"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 3l0 18"></path><path d="M12 9l4.65 -4.65"></path><path d="M12 14.3l7.37 -7.37"></path><path d="M12 19.6l8.85 -8.85"></path></svg>
+            </span>
+        </button>
+    </header>
+
+    <main class="container">
+        <h1 class="title">Delete Files</h1>
+        <p class="subtitle">View and delete files from the server</p>
+        
+        <div class="card" style="max-width: 500px; width: 100%;">
+            <label class="input-label">Available files in /uploads/:</label>
+            <div id="fileList">Loading files...</div>
+            
+            <label for="filename" class="input-label">Enter the filename to delete:</label>
+            <input type="text" name="filename" id="filename" class="input-field" placeholder="e.g., test.txt" required>
+            
+            <button type="button" class="nav-btn danger" onclick="deleteFile()">Delete File</button>
+        </div>
+        
+        <div style="margin-top: 40px;">
+            <a href="/index.html"><button type="button" class="nav-btn" style="max-width: 250px;">Back to Home</button></a>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2026 webserv | Developed by Aleksandr Kuzmin | Antoine Margoloff | Lara Krämer</p>
+    </footer>
+
+    <script src="/www/statics/script.js"></script>
+    <script>
+        function loadFiles() {
+            fetch("/uploads/")
+            .then(response => response.text())
+            .then(html => {
+                const fileList = document.getElementById("fileList");
+                fileList.innerHTML = html;
+            })
+            .catch(error => {
+                console.error("Error loading files:", error);
+                document.getElementById("fileList").innerText = "Error loading files.";
+            });
+        }
+
+        function deleteFile() {
+            const filename = document.getElementById("filename").value;
+            if (!filename) {
+                alert("Please enter a filename");
+                return;
+            }
+
+            fetch("/uploads/" + filename, {
+                method: "DELETE"
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.body.innerHTML = html;
+            })
+            .catch(error => {
+                alert("Error: " + error);
+            });
+        }
+        window.onload = loadFiles;
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>webserv</title>
+	<link rel="stylesheet" href="/www/statics/style.css">
+</head>
+<body>
+	<header class="header">
+		<button id="theme-toggle" class="theme-toggle-btn">
+			<span id="theme-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4.5"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 3l0 18"></path><path d="M12 9l4.65 -4.65"></path><path d="M12 14.3l7.37 -7.37"></path><path d="M12 19.6l8.85 -8.85"></path></svg>
+			</span>
+		</button>
+	</header>
+
+	<main class="container">
+		<h1 class="title">Welcome to webserv</h1>
+		<p class="subtitle">Browse, manage, and download files from the server</p>
+		
+		<div class="menu-grid">
+			<a href="/uploads/"><button type="button" class="nav-btn">Browse Files</button></a>
+			<a href="/delete/index.html"><button type="button" class="nav-btn">Delete Files</button></a>
+			<a href="/upload/index.html"><button type="button" class="nav-btn">Upload Files</button></a>
+			<a href="/old-page/index.html"><button type="button" class="nav-btn">Redirect</button></a>
+			<a href="/cgi-bin/index.html"><button type="button" class="nav-btn">CGI</button></a>
+			<a href="/submit/index.html"><button type="button" class="nav-btn">Submit Files</button></a>
+			<a href="/error-404"><button type="button" class="nav-btn danger">Test 404 Error</button></a>
+			<a href="/error-403"><button type="button" class="nav-btn danger">Test 403 Error</button></a>
+			<a href="/error-400"><button type="button" class="nav-btn danger">Test 400 Error</button></a>
+		</div>
+	</main>
+
+	<footer>
+		<p>&copy; 2026 webserv | Developed by Aleksandr Kuzmin | Antoine Margoloff | Lara Krämer</p>
+	</footer>
+
+	<script src="/www/statics/script.js"></script>
+</body>
+</html>
