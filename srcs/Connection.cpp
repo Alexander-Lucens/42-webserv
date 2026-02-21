@@ -15,7 +15,11 @@ Connection::Connection(int fd) : _fd(fd) {
 
 // Connection::Connection(Socket &socket): socket(socket) {}
 
-Connection::~Connection() {}
+Connection::~Connection() {
+    if (_fd != -1) {
+        ::close(_fd);
+    }
+}
 
 const std::string& Connection::get_read_buffer() const {
     return (this->read_buffer);

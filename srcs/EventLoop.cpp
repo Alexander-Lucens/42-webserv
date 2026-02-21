@@ -15,9 +15,13 @@ EventLoop::EventLoop(const std::vector<Socket*>& sockets) : _serverSockets(socke
 
 EventLoop::~EventLoop() {
 	for (std::map<int, Connection*>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
-		delete it->second;
+		close(it->first);
+        delete it->second;
 	}
 	if (_epoll_fd != -1) close(_epoll_fd);
+    for (size_t i = 0; i < _serverSockets.size(); ++i) {
+        close(_serverSockets[i]->getFd());
+    }
 }
 
 void EventLoop::init() {
@@ -82,23 +86,28 @@ void EventLoop::run() {
             }
 
             if (isServerSocket) {
-                struct sockaddr_in client_addr;
-                socklen_t client_len = sizeof(client_addr);
-                int client_fd = accept(current_fd, (struct sockaddr *)&client_addr, &client_len);
+                while (true) {
+                    struct sockaddr_in client_addr;
+                    socklen_t client_len = sizeof(client_addr);
+                    int client_fd = accept(current_fd, (struct sockaddr *)&client_addr, &client_len);
 
-                if (client_fd == -1) continue;
+                    if (client_fd == -1) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+                        else continue;
+                    }
 
-                fcntl(client_fd, F_SETFL, O_NONBLOCK);
+                    fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
-                _connections[client_fd] = new Connection(client_fd);
-                _connections[client_fd]->set_request_port(port);
+                    _connections[client_fd] = new Connection(client_fd);
+                    _connections[client_fd]->set_request_port(port);
 
-                struct epoll_event client_event;
-                client_event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-                client_event.data.fd = client_fd;
-                epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &client_event);
+                    struct epoll_event client_event;
+                    client_event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+                    client_event.data.fd = client_fd;
+                    epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, client_fd, &client_event);
 
-                std::cout << "New Client Connected! FD: " << client_fd << std::endl;
+                    std::cout << "New Client Connected! FD: " << client_fd << std::endl;
+                }
             } else {
                 if (_connections.find(current_fd) != _connections.end()) {
                     Connection* conn = _connections[current_fd];
@@ -108,6 +117,7 @@ void EventLoop::run() {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
+                            close(current_fd);
                             continue;
                         }
                     }
@@ -117,6 +127,7 @@ void EventLoop::run() {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
                             _connections.erase(current_fd);
+                            close(current_fd);
                             continue;
                         }
                     }

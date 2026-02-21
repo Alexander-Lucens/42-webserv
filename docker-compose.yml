@@ -1,6 +1,9 @@
 services:
   webserv:
-    build: .
+    build:
+      context: .
+      target: builder
+
     container_name: webserv
     
     platform: linux/amd64
