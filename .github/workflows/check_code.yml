@@ -75,3 +75,10 @@ jobs:
     - name: Run Multi ports Load Test for 5 seconds each
       run: |
         ./tests/scripts/test_multi_ports_load.sh
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Trigger CD Deployment on Render
+        run: curl -X POST "${{ secrets.DEPLOY_HOOK }}"
