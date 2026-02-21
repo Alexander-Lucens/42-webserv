@@ -78,7 +78,7 @@ jobs:
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/prod' && github.event_name == 'push'
     steps:
       - name: Trigger CD Deployment on Render
         run: curl -X POST "${{ secrets.DEPLOY_HOOK }}"
