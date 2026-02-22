@@ -6,7 +6,7 @@
 #    By: lkramer <lkramer@student.42berlin.de>      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/05/24 14:21:13 by akuzmin           #+#    #+#              #
-#    Updated: 2026/02/17 16:27:55 by lkramer          ###   ########.fr        #
+#    Updated: 2026/02/22 13:31:17 by lkramer          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -27,9 +27,16 @@ SRCS        :=  $(SRC_DIR)/main.cpp \
 TEST_SRCS	:= tests/test_response.cpp \
                tests/test_request.cpp \
                tests/test_socket.cpp \
-               srcs/shared/Response.cpp \
-               srcs/shared/Request.cpp \
-               srcs/part1/Socket.cpp 
+               srcs/Response.cpp \
+               srcs/Request.cpp \
+			   srcs/ConfigParser.cpp \
+			   srcs/Utils.cpp \
+			   srcs/Logger.cpp \
+			   srcs/Socket.cpp \
+			   srcs/Connection.cpp \
+			   srcs/CGI.cpp \
+			   srcs/FileHandler.cpp \
+               srcs/Socket.cpp 
 
 # **************************************************************************** #
 
@@ -42,8 +49,15 @@ OBJS        := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 TESTDIR		:= test_objs
 TEST_OBJS	:= $(OBJ_DIR)/tests/test_response.o \
-			 	$(OBJ_DIR)/srcs/shared/Request.o \
-				$(OBJ_DIR)/srcs/shared/Response.o
+			 	$(OBJ_DIR)/Request.o \
+				$(OBJ_DIR)/Response.o \
+				$(OBJ_DIR)/ConfigParser.o \
+				$(OBJ_DIR)/Utils.o \
+				$(OBJ_DIR)/Logger.o \
+				$(OBJ_DIR)/Socket.o \
+				$(OBJ_DIR)/Connection.o \
+				$(OBJ_DIR)/FileHandler.o \
+				$(OBJ_DIR)/Socket.o
                
 
 # **************************************************************************** #
