@@ -3,116 +3,158 @@
 #include "Response.hpp"
 #include "Request.hpp"
 
+
+/* 
+	Checks if path is a directory. 
+	Returns true if directory, false otherwise.
+*/
 bool FileHandler::is_directory(const std::string &file_path)
 {
-	DIR* dir = opendir(file_path.c_str());
-	if (dir != NULL)
+	DIR* directory = opendir(file_path.c_str());
+	if (directory != NULL)
 	{
-		closedir(dir);
+		closedir(directory);
 		return true;
 	}
 	return false;
 }
-
+/* 
+	Checks if file/directory has read permissions. 
+	Returns true if readable, false otherwise.
+*/
 bool FileHandler::is_readable(const std::string &file_path)
 {
-	return (access(file_path.c_str(), R_OK) == 0);
+	struct stat file_info;
+	if (stat(file_path.c_str(), &file_info) != 0)
+		return false;
+
+	// check for directories
+	if (S_ISDIR(file_info.st_mode))
+	 	return ((file_info.st_mode & S_IXUSR) != 0 && access(file_path.c_str(), X_OK) == 0);
+
+    // check read permissions for files
+    if ((file_info.st_mode & S_IRUSR) == 0)
+    	return false;
+
+    return (access(file_path.c_str(), R_OK) == 0);
 }
 
-bool FileHandler::file_exists(const std::string &file_path)
+/* 
+	Checks if file has write permissions.
+	Returns true if writable, false otherwise.
+*/
+bool FileHandler::is_writable(const std::string &file_path)
 {
-	std::ifstream file(file_path.c_str());
-	if (!file.is_open())
+	struct stat file_info;
+	if (stat(file_path.c_str(), &file_info) != 0)
 		return false;
-	file.close();
+
+	// check if no write permissions for owner
+	if ((file_info.st_mode & S_IWUSR) == 0)
+		return false;
+	if (access(file_path.c_str(), W_OK) != 0)
+		return false;
+
 	return true;
 }
 
-/* Loads html files dynamically through given file path reference*/
+/* 
+	Checks if the given file exists. 
+	Returns true if exists, false otherwise.
+*/
+bool FileHandler::file_exists(const std::string &file_path)
+{
+	// system call with stat to generate struct with metadata
+	struct stat file_info;
+    return (stat(file_path.c_str(), &file_info) == 0);
+}
+
+/* 
+	Loads and returns contents of a file as a string. 
+	Returns empty string if file cannot be read.
+*/
 std::string FileHandler::load_file(const std::string &path)
 {
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file.is_open())
+	if (!file.is_open()) {
+		LOG_WARNING("load_file: cannot open file '" << path << "'");
 		return "";
+	}
 
 	file.seekg(0, std::ios::end);
 	std::streamsize size = file.tellg();
 	file.seekg(0, std::ios::beg);
 
-	if (size <= 0)
+	if (size <= 0) {
+		LOG_WARNING("load_file: file '" << path << "' is empty or invalid");
 		return "";
-
-	if (static_cast<size_t>(size) > MAX_FILE_SIZE)
+	}
+	if (static_cast<size_t>(size) > MAX_FILE_SIZE) {
+		LOG_WARNING("load_file: file '" << path << "' exceeds max size of " << MAX_FILE_SIZE << " bytes");
 		return "";
+	}
 
 	std::string content;
 	content.resize(size);
-
-	if (!file.read(&content[0], size))
+	if (!file.read(&content[0], size)) {
+		LOG_WARNING("load_file: failed to read file '" << path << "'");
 		return "";
+	}
 
 	return content;
 }
 
-/* Processes content files e.g. css */
-std::string FileHandler::find_content_type(const std::string &content_file_path)
+
+static std::string get_extension(const std::string &path)
 {
-	// text types
-	if (content_file_path.find(".html") != std::string::npos)
-		return "text/html";
-	if (content_file_path.find(".txt") != std::string::npos)
-		return "text/plain";
-	if (content_file_path.find(".css") != std::string::npos)
-		return "text/css";
-	if (content_file_path.find(".csv") != std::string::npos)
-		return "text/csv";
-
-	// javaScript
-	if (content_file_path.find(".js") != std::string::npos)
-		return "application/javascript";
-
-	// json
-	if (content_file_path.find(".json") != std::string::npos)
-		return "application/json";
-
-	// images
-	if (content_file_path.find(".jpg") != std::string::npos || content_file_path.find(".jpeg") != std::string::npos)
-		return "image/jpeg";
-	if (content_file_path.find(".png") != std::string::npos)
-		return "image/png";
-	if (content_file_path.find(".gif") != std::string::npos)
-		return "image/gif";
-	if (content_file_path.find(".svg") != std::string::npos)
-		return "image/svg+xml";
-	if (content_file_path.find(".ico") != std::string::npos)
-		return "image/x-icon";
-
-	// documents
-	if (content_file_path.find(".pdf") != std::string::npos)
-		return "application/pdf";
-	if (content_file_path.find(".zip") != std::string::npos)
-		return "application/zip";
-
-	// audio/Video
-	if (content_file_path.find(".mp3") != std::string::npos)
-		return "audio/mpeg";
-	if (content_file_path.find(".mp4") != std::string::npos)
-		return "video/mp4";
-
-	return ("text/html");
+	size_t index = path.rfind('.');
+	if (index == std::string::npos) {
+		LOG_WARNING("get_extension:" << path << "' not found");
+		return "";
+	}
+	return path.substr(index);
+}
+/* 
+	Finds MIME type based on file extension. 
+	Returns MIME type string or "application/octet-stream" as default.
+*/
+std::string FileHandler::find_content_type(const std::string &path)
+{
+	static std::map<std::string, std::string> mime_types;
+	if (mime_types.empty())
+	{
+		mime_types[".html"] = "text/html";
+		mime_types[".txt"]  = "text/plain";
+		mime_types[".css"]  = "text/css";
+		mime_types[".csv"]  = "text/csv";
+		mime_types[".js"]   = "application/javascript";
+		mime_types[".json"] = "application/json";
+		mime_types[".jpg"]  = "image/jpeg";
+		mime_types[".jpeg"] = "image/jpeg";
+		mime_types[".png"]  = "image/png";
+		mime_types[".gif"]  = "image/gif";
+		mime_types[".svg"]  = "image/svg+xml";
+		mime_types[".ico"]  = "image/x-icon";
+		mime_types[".pdf"]  = "application/pdf";
+		mime_types[".zip"]  = "application/zip";
+		mime_types[".mp3"]  = "audio/mpeg";
+		mime_types[".mp4"]  = "video/mp4";
+		mime_types[".sh"]   = "application/x-sh";
+		mime_types[".exe"]  = "application/x-msdownload";
+		mime_types[".bin"]  = "application/octet-stream";
 	}
 
-// ? Do not understan on mearging what was different, save 2 of them ?
-// bool FileHandler::validate_content_length(const Request &request)
-// {
-// 	std::string content_length_val = request.getHeader("Content-Length");
-// 	if (content_length_val.empty() || request.body.empty())
-// 		return false;
+	std::string extension = get_extension(path);
+	std::map<std::string, std::string>::iterator match = mime_types.find(extension);
+	if (match != mime_types.end())
+		return match->second;
 
-// 	int content_len = std::atoi(content_length_val.c_str());
-// 	return (int)request.body.length() == content_len;
-// }
-
+	return "application/octet-stream";
+}
+/* 
+	Saves uploaded file content to file path. 
+	Returns true on success, false on failure.
+	*/
 bool FileHandler::save_uploaded_file(const std::string& file_path, const std::string& content)
 {
 	std::ofstream outfile(file_path.c_str(), std::ios::binary);
@@ -123,24 +165,56 @@ bool FileHandler::save_uploaded_file(const std::string& file_path, const std::st
 	outfile.close();
 	return true;
 }
-std::string FileHandler::html_escape(const std::string& input)
+
+/* 
+	Converts HTML special characters to prevent injection attacks. 
+	Returns the escaped string. 
+*/
+std::string FileHandler::convert_html_chars(const std::string& input)
 {
-	std::string out;
-	out.reserve(input.size());
+	std::string result;
+	result.reserve(input.size());
 
 	for (size_t i = 0; i < input.size(); ++i) {
 		switch (input[i]) {
-			case '&':  out += "&amp;";  break;
-			case '<':  out += "&lt;";   break;
-			case '>':  out += "&gt;";   break;
-			case '"':  out += "&quot;"; break;
-			case '\'': out += "&#39;";  break;
-			default:   out += input[i]; break;
+			case '&':  result += "&amp;";  break;
+			case '<':  result += "&lt;";   break;
+			case '>':  result += "&gt;";   break;
+			case '"':  result += "&quot;"; break;
+			case '\'': result += "&#39;";  break;
+			default:   result += input[i]; break;
 		}
 	}
-	return out;
+	return result;
 }
+/* 
+	Decodes URL-encoded strings (e.g., %20 to space, %C3%A4 to ä).
+	Returns decoded string.
+*/
+std::string FileHandler::decode_url(const std::string &encoded)
+{
+	std::string decoded;
+	decoded.reserve(encoded.size());
 
+	for (size_t i = 0; i < encoded.size(); ++i) {
+		if (encoded[i] == '%' && i + 2 < encoded.size()) {
+			// convert hex characters to decimal
+			std::string hex = encoded.substr(i + 1, 2);
+			char byte = static_cast<char>(std::strtol(hex.c_str(), NULL, 16));
+			decoded += byte;
+			i += 2;
+		} else if (encoded[i] == '+') {
+			decoded += ' ';
+		} else {
+			decoded += encoded[i];
+		}
+	}
+	return decoded;
+}
+/* 
+	Generates an HTML directory listing for given directory path. 
+	Returns HTML string or empty string on error.
+*/
 std::string FileHandler::handle_autoindex(const std::string &normalized_html_path, const std::string &directory_path)
 {
 	//  pointer to a directory stream
@@ -190,7 +264,7 @@ std::string FileHandler::handle_autoindex(const std::string &normalized_html_pat
 			href_link += '/';
 		href_link += filename;
 		html << "<li><a href=\"" << href_link << "\">"
-				<< html_escape(filename) << "</a></li>\n";
+				<< convert_html_chars(filename) << "</a></li>\n";
 	}
 	html << "</ul></body></html>";
 	return html.str();
@@ -201,66 +275,83 @@ Returns extracted filename from filename= field, or uploaded_file as default. */
 std::string FileHandler::get_filename_from_multipart(const std::string &body)
 {
 	std::string filename_marker = "filename=\"";
-	size_t pos = body.find(filename_marker);
+	size_t index = body.find(filename_marker);
 
-	if (pos != std::string::npos) {
-		pos += filename_marker.length();
-		size_t end = body.find("\"", pos);
-		if (end != std::string::npos)
-			return body.substr(pos, end - pos);
+	if (index != std::string::npos) {
+		index += filename_marker.length();
+		size_t closing_quote = body.find("\"", index);
+		if (closing_quote != std::string::npos) {
+			std::string filename = body.substr(index, closing_quote - index);
+			return decode_url(filename);
+		}
 	}
-	return "uploaded_file";
+	LOG_WARNING("get_filename_from_multipart: filename not found, using default");
+	return "unnamed_upload";
 }
 
-/*  Extracts file content from multipart form-data request body between boundaries. */
-std::string FileHandler::get_file_content(const std::string &body,
-                                          const std::string &boundary)
+/*  
+	Extracts file content from multipart form-data request body between boundaries. 
+	Returns filename or "uploaded_file" as default.
+	*/
+std::string FileHandler::get_file_content(const std::string &body, const std::string &boundary)
 {
 	const std::string boundary_marker = "--" + boundary;
 	const std::string boundary_end = boundary_marker + "--";
 
 	// find first boundary
-	size_t pos = body.find(boundary_marker);
-	if (pos == std::string::npos)
+	size_t index = body.find(boundary_marker);
+	if (index == std::string::npos) {
+		LOG_WARNING("get_file_content: boundary marker not found");
 		return "";
+	}
 
 	// skip boundary + CRLF
-	pos = body.find("\r\n", pos);
-	if (pos == std::string::npos)
+	index = body.find("\r\n", index);
+	if (index == std::string::npos){
+		LOG_WARNING("get_file_content: CRLF after boundary not found");
 		return "";
-	pos += 2;
+	}
+	index += 2;
 
 	// skip headers end 
-	size_t headers_end = body.find("\r\n\r\n", pos);
-	if (headers_end == std::string::npos)
+	size_t headers_end = body.find("\r\n\r\n", index);
+	if (headers_end == std::string::npos) {
+		LOG_WARNING("get_file_content: headers end not found");
 		return "";
+	}
 	size_t content_start = headers_end + 4;
 
 	// find next boundary 
 	size_t next_boundary = body.find("\r\n" + boundary_marker, content_start);
-	if (next_boundary == std::string::npos)
+	if (next_boundary == std::string::npos) {
+		LOG_WARNING("get_file_content: closing boundary not found");
 		return "";
+	}
 
 	size_t content_end = next_boundary;
 	return body.substr(content_start, content_end - content_start);
 }
 
-
+/* 
+	Extracts value of a form field from URL-encoded form data.
+	Returns file content string or empty string if not found 
+*/
 std::string FileHandler::extract_form_data(const std::string &body, const std::string &field_name)
 {
-	std::string search_key = field_name + "=";
-	size_t pos = body.find(search_key);
+	std::string query_key = field_name + "=";
+	size_t index = body.find(query_key);
 
-	if (pos == std::string::npos)
+	if (index == std::string::npos) {
+		LOG_WARNING("extract_form_data:" << field_name << "' not found");
 		return "";
+	}
 
-	// Move past the "field_name=" part
-	pos += search_key.length();
+	// move past "field_name=" part
+	index += query_key.length();
 
-	// Find the end of the value (either & or end of string)
-	size_t end = body.find("&", pos);
-	if (end == std::string::npos)
-		end = body.length();
-
-	return body.substr(pos, end - pos);
+	// find the end of value, either & or end of string
+	size_t value_end = body.find("&", index);
+	if (value_end == std::string::npos)
+		value_end = body.length();
+	return body.substr(index, value_end - index);
 }
