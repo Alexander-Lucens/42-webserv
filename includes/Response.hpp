@@ -16,12 +16,12 @@
 #include "FileHandler.hpp"
 #include "Utils.hpp"
 #include "ConfigParser.hpp"
-
+#include "Logger.hpp"
+#include <sys/stat.h>
 
 #define NEW_LINE		"\r\n"
 #define BLANK_LINE		"\r\n\r\n"
 #define SERVER			"webserv/1.0"
-#define MAX_FILE_SIZE	(5 * 1024 * 1024) 
 
 enum Language {PYTHON, RUST};
 
@@ -48,21 +48,23 @@ class Response {
 		std::string _html_body;
 		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
 		std::map<std::string, std::string> _headers;
+		std::string _method;
+		std::string _request_uri;
 
 		// Helper 
 		std::string			reason_message(int status_code);
 		Response			handle_post_submit(const Request &request);
 		Response			handle_post_upload(const Request &request);
-		Response			response_redirect(const int &status_code, const std::string &body);
 		std::string 		file_path_check(const std::string &uri);
 		Response			handle_directory(const std::string& uri, std::string& file_path);
-
-
-
-
+		void				set_download_header(const std::string &path);
+		void				set_method(const Request &request);
+		int					validate_file_path(const std::string& file_path);
+		Response			handle_special_routes(const std::string& uri);
+		int					validate_file_writable(const std::string& file_path);
+		
 	public:
 		std::string version; 
-
 		// _configuration data
 		const ServerConfig* _config;
 
@@ -78,10 +80,10 @@ class Response {
 
 		// Requests
 		Response 		handle_get(const Request &request);
-		// Response		handle_get_cgi(const Request& request, Language lang);
 		Response 		handle_post(const Request &request);
-		// Response		handle_post_cgi(const Request& request, Language lang);
 		Response		handle_delete(const Request &request);
+		Response		handle_redirect();
+
 
 		Response 		handle_error(const int error_code);
 		Response 		handle_request(const Request &request);
@@ -93,6 +95,6 @@ class Response {
 		void 			set_body(const std::string &html_body);
 
 		// Serializer 
-		std::string serialize();
+		std::string		serialize();
 
 };
