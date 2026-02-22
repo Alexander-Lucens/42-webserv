@@ -24,6 +24,48 @@ std::string Utils::extract_boundary(const std::string& content_type)
 	return content_type.substr(boundary_pos + 9);
 }
 
+
+int Utils::get_errno_code()
+{
+	switch (errno)
+	{
+		case ENOENT:
+			return 404;
+		case EACCES:
+		case EPERM:
+			return 403;
+		default:
+			return 500;
+	}
+}
+
+
+bool Utils::is_valid_uri(const std::string& uri)
+{
+	if (uri.empty()) {
+		LOG_ERROR("URI validation: Empty URI");
+		return false;
+	}
+	if (uri[0] != '/') {
+		LOG_ERROR("URI validation: Invalid URI format - must start with /");
+		return false;
+	}
+
+	if (uri.find('\0') != std::string::npos || uri.find("%00") != std::string::npos) {
+		LOG_ERROR("URI validation: Null byte detected in URI");
+		return false;
+	}
+
+	if (uri.find("..") != std::string::npos) {
+		LOG_ERROR("URI validation: Path traversal attempt detected: " << uri);
+		return false;
+	}
+	if (uri.find("%2e%2e") != std::string::npos || uri.find("%2E%2E") != std::string::npos) {
+		LOG_ERROR("URI validation: Encoded path traversal attempt detected: " << uri);
+		return false;
+	}
+    return true;
+}
 static int to_lower_safe(int c)
 {
 	return std::tolower((unsigned char)c);

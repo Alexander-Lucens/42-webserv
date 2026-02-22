@@ -49,4 +49,51 @@ inside the Docker container:
 exit
 ```
 
+
+### Curl Tests
+
+# Basic GET request
+curl http://localhost:8080/
+
+# GET a specific file
+curl http://localhost:8080/index.html
+
+# GET with custom headers
+curl -H "Host: example.com" http://localhost:8080/
+
+# GET to trigger 404
+curl http://localhost:8080/nonexistent.html
+
+# GET to trigger 403 (forbidden)
+curl http://localhost:8080/error-403.html
+
+# GET to trigger 400 (bad request)
+curl http://localhost:8080/error-400
+
+# GET a file from uploads directory
+curl http://localhost:8080/uploads/myfile.txt
+
+# POST file upload (multipart/form-data)
+curl -F "file=@file2.txt" http://localhost:8080/upload
+
+
+# Delete a specific file
+curl -X DELETE http://localhost:8080/test.txt
+
+# Delete with verbose output
+curl -v -X DELETE http://localhost:8080/test.txt
+
+
+// OPTIONAL ONLY IF WE KEEP THE SUBMIT PART
+
+# Basic POST with form data
+curl -X POST -d "filename=test.txt" http://localhost:8080/submit
+
+# Malformed request return 400
+curl "http://localhost:8080/test%00.html"
+
+
+# POST with JSON data
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"name":"test"}' http://localhost:8080/submit
 ---
