@@ -94,6 +94,10 @@ int Connection::parse_request_line() {
         return (PARSE_ERROR);
     this->request.uri = request_line.substr(start_pos, end_pos - start_pos);
 
+	if (!Utils::is_valid_uri(request.uri)) {
+		LOG_ERROR("Invalid URI: " << request.uri);
+		return PARSE_ERROR;
+	}
     // building version
 	start_pos = end_pos + 1;
 	this->request.version = request_line.substr(start_pos);
@@ -257,7 +261,7 @@ int Connection::scan_buffer() {
             return (STOP);
         }
         case Request::ERROR: {
-            LOG_INFO("Unable to parse request: " << _fd);
+			LOG_ERROR("Connection: Request parsing error");
       		this->response = this->response.handle_error(400);
 			this->clean_buffer_for_new_request();
 			this->request.clear();

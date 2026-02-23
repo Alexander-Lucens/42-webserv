@@ -4,26 +4,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-// enum Language {PYTHON, RUST};
-
-/* 
-HttpRequest (from parser)
-	↓
-Validation
-	↓
-Executor / Dispatcher
-	↓
-- Path resolution
-- Method handling (GET/POST/DELETE)
-- Error handling (handle_error)
-	↓
-Response object
-	↓
-Serializer (Response → raw HTTP)
-	↓
-socket sends it
-*/
-
 // Default constructor
 Response::Response() : _status_code(200), version("HTTP/1.1") {}
 
@@ -32,8 +12,9 @@ Response::Response(const Response& other)
 	:	_status_code(other._status_code),
 		_html_body(other._html_body),
 		_headers(other._headers),
+		_method(other._method),
+		_request_uri(other._request_uri),
 		version(other.version) {}
-
 
 // Copy assignment operator
 Response& Response::operator=(const Response& other)
@@ -43,6 +24,8 @@ Response& Response::operator=(const Response& other)
 		_status_code = other._status_code;
 		_html_body = other._html_body;
 		_headers = other._headers;
+		_method = other._method;
+		_request_uri = other._request_uri;
 		version = other.version;
 	}
 	return (*this);
@@ -63,6 +46,11 @@ void Response::set_header(const std::string &key, const std::string &value)
 	_headers[key] = value;
 }
 
+void Response::set_method(const Request &request)
+{	
+	_method = request.method;
+}
+
 /**
  * @brief Set config implementation
  * 
@@ -75,51 +63,59 @@ void Response::set_config(const Request &request) {
 	}
 	_config = &ConfigParser::get_instance().get_config(request.port, host);
 }
+
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
-	std::cout << "DEBUG handle_request: method=[" << request.method << "] uri=[" << request.uri << "]" << std::endl;
 	set_config(request);
+	set_method(request);
+	 _request_uri = request.uri;
+
+	if (request.uri == "/old-page")
+		return handle_redirect();
 	if (request.method == "GET")
 		return (handle_get(request));
 	if (request.method == "POST")
 		return (handle_post(request));
 	if (request.method == "DELETE")
 		return (handle_delete(request));
+
+	LOG_WARNING("Unsupported method: " << request.method);
 	return (handle_error(501));
 }
 
 Response Response::handle_get(const Request& request)
 {
-	Response response;
-	std::string path = request.uri; 
-
-	if (path == "/old-page")
-		return response_redirect(301, "/redirect.html");
+	std::string path = FileHandler::decode_url(request.uri); 
 	if (path == "/error-404")
 		return handle_error(404);
 	if (path == "/error-403")
 		return handle_error(403);
 	if (path == "/error-400")
-		return handle_error(400);
+        return handle_error(400);
 	if	(path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
 		return handle_get_cgi(request, *this, PYTHON);
 	if	(path.find(".rs") != std::string::npos || path.find("rust") != std::string::npos)
 		return handle_get_cgi(request, *this, RUST);
 
+	Response response;
 	std::string file_path = file_path_check(path);
 	
-	if (!FileHandler::file_exists(file_path))
-		return handle_error(404);
-    if (FileHandler::is_directory(file_path))
+	if (FileHandler::is_directory(file_path))
 		return handle_directory(path, file_path);
-	if (!FileHandler::is_readable(file_path))
-		return handle_error(403);
+	int status_code = validate_file_path(file_path);
+	if (status_code != 0)
+		return handle_error(status_code);
 
 	std::string body = FileHandler::load_file(file_path);
 	if(body.empty())
-		return (handle_error(404)); 
-
+	{
+		LOG_ERROR("File not loading: " << file_path);
+		return (handle_error(Utils::get_errno_code())); 
+	}
+	if (path.find("/uploads/") == 0)
+		response.set_download_header(path);
+	
 	response.set_status(200);
 	response.set_header("Date", Utils::get_http_date());
 	response.set_header("Server", SERVER);
@@ -127,6 +123,18 @@ Response Response::handle_get(const Request& request)
 	response.set_body(body);
 	return (response);
 }
+
+void Response::set_download_header(const std::string &path)
+{
+	size_t last_slash = path.find_last_of('/');
+	std::string file_name;
+
+	if (last_slash != std::string::npos)
+		file_name = path.substr(last_slash + 1);
+	else
+		file_name = path;
+	set_header("Content-Disposition", "attachment; filename=\"" + file_name + "\"");
+	}
 
 Response Response::handle_post(const Request& request)
 {
@@ -151,7 +159,7 @@ Response Response::handle_post_submit(const Request& request)
 		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
 		+ std::string("div { text-align: center; }")
 		+ std::string("h1 { color: #13d019; }")
-		+ std::string("</style></head><body><div><h1>200 Form data received</h1><p>File '") + request.body + std::string("' uploaded successfully</p></div></body></html>");
+		+ std::string("</style></head><body><div><h1>201 Form data received</h1><p>File '") + request.body + std::string("' uploaded successfully</p></div></body></html>");
 
 	return response_body(200, body);
 }
@@ -170,14 +178,15 @@ Response Response::handle_post_upload(const Request& request)
 	if (file_content.empty())
 		return handle_error(400);
 
-	if (!FileHandler::save_uploaded_file(_config->locations.find(request.uri)->second.root + "/" + file_name, file_content))
+	std::string upload_path = _config->root + "/uploads/" + file_name;
+	if (!FileHandler::save_uploaded_file(upload_path, file_content))
 		return handle_error(500);
 
 	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
 		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
 		+ std::string("div { text-align: center; }")
 		+ std::string("h1 { color: #13d019; }")
-		+ std::string("</style></head><body><div><h1>200 Created</h1><p>File '") + file_name + std::string("' uploaded successfully</p>")
+		+ std::string("</style></head><body><div><h1>201 Created</h1><p>File '") + file_name + std::string("' uploaded successfully</p>")
 		+ std::string("<div style=\"margin-top: 30px;\"><a href=\"/index.html\"><button type=\"button\" class=\"back-btn\">Back to Home</button></a></div>")
 		+ std::string("</div></body></html>");
 
@@ -186,25 +195,52 @@ Response Response::handle_post_upload(const Request& request)
 	return response;
 }
 
+Response Response::handle_redirect()
+{
+	Response response; 
+
+	response.set_status(301);
+	response.set_header("Content-Type", "text/html; charset=UTF-8");
+	response.set_header("Location", "/redirect.html");
+    response.set_header("Date", Utils::get_http_date());
+    response.set_header("Server", SERVER);
+	response.set_body("");
+	return (response); 
+}
 Response Response::handle_delete(const Request &request)
 {
-	std::string filename = request.uri.substr(9);
+	std::string file_name = FileHandler::decode_url(request.uri); 
 
-    if (filename.empty())
+	if (file_name.find("/uploads/") != 0)
+	{
+		LOG_ERROR("DELETE not allowed on: " << file_name);
+		return handle_error(405);
+	}
+	if (!file_name.empty() && file_name[0] == '/')
+		file_name = file_name.substr(1);
+	if (file_name.find("uploads/") == 0)
+		file_name = file_name.substr(8);
+	if (file_name.empty())
+	{
+		LOG_ERROR("No filename provided");
 		return handle_error(400);
-		
-	std::string file_path = "www/uploads/" + filename;
-	if (!FileHandler::file_exists(file_path))
-		return (handle_error(404));
+	}
 
+	std::string file_path = _config->root + "/uploads/" + file_name;
+	int status_code = validate_file_writable(file_path);
+	if (status_code != 0)
+		return handle_error(status_code);
 	if (std::remove(file_path.c_str()) != 0)
-		return (handle_error(500));
+	{
+		LOG_ERROR("File not found: " << file_path);
+		return handle_error(Utils::get_errno_code());
+	}
 
 	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
 		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
 		+ std::string("div { text-align: center; }")
 		+ std::string("h1 { color: #13d019; }")
-		+ std::string("</style></head><body><div><h1>200 Deleted</h1><p>File '") + filename + std::string("' successfully deleted</p>")
+		+ std::string("</style></head><body><div><h1>200 Deleted</h1><p>File '") + file_name + std::string("' successfully deleted</p>")
 		+ std::string("<div style=\"margin-top: 30px;\"><a href=\"/index.html\"><button type=\"button\" class=\"back-btn\">Back to Home</button></a></div>")
 		+ std::string("</div></body></html>");
 	return ((response_body(200, body)));
@@ -216,35 +252,21 @@ Response Response::handle_error(const int error_code)
 
 	switch(error_code)
 	{
-		case 400:
-			error_file = "www/errors/400.html";
-			break;
-		case 401:
-			error_file = "www/errors/401.html";
-			break;
-		case 403:
-			error_file = "www/errors/403.html";
-			break;
-		case 404:
-			error_file = "www/errors/404.html";
-			break;
-		case 405:
-			error_file = "www/errors/405.html";
-			break;
-		case 500:
-			error_file = "www/errors/500.html";
-			break;
-		default:
-			error_file= "www/errors/501.html";
+		case 400: error_file = "www/errors/400.html"; break;
+		case 401: error_file = "www/errors/401.html"; break;
+		case 403: error_file = "www/errors/403.html"; break;
+		case 404: error_file = "www/errors/404.html"; break;
+		case 405: error_file = "www/errors/405.html"; break;
+		case 413: error_file = "www/errors/413.html"; break;
+		case 500: error_file = "www/errors/500.html"; break;
+		default: error_file= "www/errors/501.html";
 	}
 
 	std::string html_error_file = FileHandler::load_file(error_file); 
 	return ((response_body(error_code, html_error_file)));
 }
 
-
 /* HELPER FUNCTION */
-
 Response Response::handle_directory(const std::string &uri, std::string &file_path)
 {
 	std::string index_file = file_path + "/";
@@ -259,7 +281,7 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
 
 	std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
 	if (autoindex_html.empty())
-		return handle_error(403);
+		return handle_error(Utils::get_errno_code());
 	return response_body(200, autoindex_html);
 }
 
@@ -267,39 +289,33 @@ std::string Response::file_path_check(const std::string &uri)
 {
     std::string file_path = uri;
     
-    // Safety check
-    if (!_config) {
-		// LOGGER SHOULD BE HERE
-        std::cerr << "ERROR: _config is null!" << std::endl;
-        return "";
-    }
-    
-    if (file_path.find("/uploads") != 0) 
-    {
-        if (file_path == "/") {
-            if (_config->index.empty()) {
-				// LOGGER SHOULD BE HERE
+	if (!_config) {
+		LOG_ERROR(file_path << "_config is null!");
+		return "";
+	}
 
-                std::cerr << "ERROR: _config->index is empty!" << std::endl;
-                return _config->root + "/index.html";  // fallback
-            }
-            file_path = _config->root + "/" + _config->index[0];
-        }
-        else
-            file_path = _config->root + "/base_page" + file_path;
-    }
-    else
-        file_path = _config->root + "/" + file_path;
-    return file_path;
+	if (file_path.find("/uploads/") == 0) 
+		file_path = _config->root + file_path;
+	else if (file_path == "/") {
+		if (_config->index.empty()) {
+			LOG_WARNING("No index file configured, using default");
+			return _config->root + "/index.html";
+		}
+		file_path = _config->root + "/" + _config->index[0];
+	}
+	else
+		file_path = _config->root + "/base_page" + file_path;
+		
+	return file_path;
 }
 
 /* Sends response to socket (creates one liner) */
 void Response::set_body(const std::string &html_body)
 {
 	_html_body = html_body;
-	std::stringstream ss;
-	ss << _html_body.size();
-	_headers["Content-Length"] = ss.str();
+	std::stringstream content_length_stream;
+	content_length_stream << _html_body.size();
+	_headers["Content-Length"] = content_length_stream.str();
 }
 
 /* Sends response to socket (creates one liner) */
@@ -307,7 +323,8 @@ std::string Response::serialize()
 {
 	std::ostringstream http_response;
 	http_response << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
-
+	LOG_INFO(this->_method << " " << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
+	
 	// write all headers
 	for (std::map<std::string, std::string>::const_iterator map_item = this->_headers.begin();
 			map_item != this->_headers.end();
@@ -329,6 +346,7 @@ std::string Response::reason_message(int status_code)
 		case 200: return "OK";
 		case 201: return "Created";
 		case 204: return "No Content";
+		case 301: return "Moved Permanently";
 		case 400: return "Bad Request";
 		case 403: return "Forbidden";
 		case 404: return "Not Found";
@@ -354,16 +372,38 @@ Response Response::response_body(const int &status_code, const std::string &body
 	return (response); 
 }
 
-/* Returns response body information */
-Response Response::response_redirect(const int &status_code, const std::string &location)
+int Response::validate_file_path(const std::string& file_path)
 {
-	Response response; 
+	if (!FileHandler::file_exists(file_path)) {
+		LOG_INFO("404 Not Found: " << file_path);
+		return 404;
+    }
+    if (!FileHandler::is_readable(file_path)) {
+        LOG_ERROR("File not readable: " << file_path);
+        return Utils::get_errno_code();
+    }
+	struct stat file_info;
+	if (stat(file_path.c_str(), &file_info) == 0)
+	{
+		if (static_cast<size_t>(file_info.st_size) > MAX_FILE_SIZE)
+		{
+			LOG_ERROR("File too large: " << file_path << file_info.st_size << " bytes, max: " << MAX_FILE_SIZE);
+			return 413;
+		}
+	}
+    return 0;
+}
 
-	response.set_status(status_code);
-	response.set_header("Content-Type", "text/html; charset=UTF-8");
-	response.set_header("Location", location);
-    response.set_header("Date", Utils::get_http_date());
-    response.set_header("Server", SERVER);
-	response.set_body("");
-	return (response); 
+int Response::validate_file_writable(const std::string& file_path)
+{
+	if (!FileHandler::file_exists(file_path)) {
+		LOG_ERROR("File doesn't exist: " << file_path);
+		return 404;
+	}
+
+	if (!FileHandler::is_writable(file_path)) {
+		LOG_ERROR("File not writable: " << file_path);
+		return 403;
+	}
+	return 0;
 }
