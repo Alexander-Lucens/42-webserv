@@ -1,5 +1,6 @@
 #include "Colors.hpp"
 #include "Connection.hpp"
+#include "Logger.hpp"
 #include <cctype>
 #include <string>
 #include <algorithm>
@@ -195,6 +196,7 @@ int Connection::scan_buffer() {
             else if (result == PARSE_INCOMPLETE)
                 return (STOP);
             else if (result == PARSE_ERROR) {
+                LOG_INFO("Error parsing the request line.");
                 this->request.state = Request::ERROR;
                 return (CONTINUE);
             }
@@ -209,6 +211,7 @@ int Connection::scan_buffer() {
             else if (result == PARSE_INCOMPLETE)
                 return (STOP);
             else if (result == PARSE_ERROR) {
+                LOG_INFO("Error parsing the headers block.");
                 this->request.state = Request::ERROR;
                 return (CONTINUE);
             }
@@ -224,6 +227,7 @@ int Connection::scan_buffer() {
                 else if (result == PARSE_INCOMPLETE)
                     return (STOP);
                 else if (result == PARSE_ERROR) {
+                    LOG_INFO("Error parsing the body.");
                     this->request.state = Request::ERROR;
                     return (CONTINUE);
                 }
@@ -253,6 +257,7 @@ int Connection::scan_buffer() {
             return (STOP);
         }
         case Request::ERROR: {
+            LOG_INFO("Unable to parse request: " << _fd);
       		this->response = this->response.handle_error(400);
 			this->clean_buffer_for_new_request();
 			this->request.clear();

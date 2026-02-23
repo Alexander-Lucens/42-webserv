@@ -21,3 +21,5 @@
 
 Response handle_post_cgi(const Request& request, Response& response, Language lang);
 Response handle_get_cgi(const Request& request, Response& response, Language lang);
+void set_cgi_env(const Request& request);
+bool execute_cgi(const Request& request, char *path, Language lang);
