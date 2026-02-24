@@ -70,7 +70,7 @@ class Response {
 
 
 		// all things relate to check configuration
-		bool				validate_request_by_configuration(const Request &request);
+		int				validate_request_by_configuration(const Request &request);
 		
 	public:
 		std::string							_conf_location_path;

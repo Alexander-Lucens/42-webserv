@@ -48,7 +48,7 @@ void Response::set_header(const std::string &key, const std::string &value)
 
 void Response::set_method(const Request &request)
 {	
-	_method = request.method;
+	this->_method = request.method;
 }
 
 /**
@@ -72,10 +72,10 @@ void Response::set_config(const Request &request) {
  * it will be extracted from the URI and stored in request.path and request.query_string.
  * @return true if the request is invalid, false otherwise.
  */
-bool Response::validate_request_by_configuration(const Request &request) {
+int Response::validate_request_by_configuration(const Request &request) {
     if (!_config) {
         LOG_ERROR("No configuration found for request: " << request.uri);
-        return false;
+        return 500;
     }
     
     std::string path = request.uri;
@@ -90,13 +90,16 @@ bool Response::validate_request_by_configuration(const Request &request) {
     }
     
     std::string best_match;
+    bool exact_match = false;
     
     if (_config->locations.count(search_path)) {
         best_match = search_path;
+        exact_match = true;
     } else if (_config->locations.count(path)) {
         best_match = path;
+        exact_match = true;
     } else {
-		std::map<std::string, LocationConfig>::const_iterator it;
+        std::map<std::string, LocationConfig>::const_iterator it;
         for (it = _config->locations.begin(); it != _config->locations.end(); ++it) {
             if (search_path.find(it->first) == 0) {
                 if (best_match.empty() || it->first.length() > best_match.length()) {
@@ -106,18 +109,28 @@ bool Response::validate_request_by_configuration(const Request &request) {
         }
     }
     
-    _conf_location_path = best_match.empty() ? "/" : best_match;
+    if (best_match.empty()) {
+        LOG_WARNING("No matching location found for URI: " << request.uri);
+        _conf_location_path = "";
+        return 404;
+    }
     
+    _conf_location_path = best_match;
     LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
     
     if (_config->locations.count(_conf_location_path)) {
         const std::vector<std::string>& methods = _config->locations.at(_conf_location_path).methods;
         if (!methods.empty() && std::find(methods.begin(), methods.end(), request.method) == methods.end()) {
-            return true;
+            if (!exact_match && _conf_location_path != "/") {
+                LOG_WARNING("Method " << request.method << " not allowed for location: " << _conf_location_path);
+                return 404;
+            }
+            return 405;
         }
     }
-	LOG_WARNING("WE PASS CONFIG AND ITS PRESENTS IN IT");
-    return false;
+    
+    LOG_WARNING("WE PASS CONFIG AND ITS PRESENTS IN IT");
+    return 0;
 }
 
 /* Filters request type and requested function  */
@@ -129,9 +142,10 @@ Response Response::handle_request(const Request &request)
 	 * SET HANDLER HERE FOR CHECK CONFIG ROUTES
 	 * <---
 	 */
-	if (validate_request_by_configuration(request)) {
-		LOG_WARNING("Request validation failed for uri: " << request.uri);
-		return handle_error(404);
+	int error_code = validate_request_by_configuration(request);
+	if (error_code != 0) {
+		LOG_WARNING("Request validation failed for uri: " << request.uri << " method: " << request.method << " with config location: " << _conf_location_path);
+		return handle_error(error_code);
 	}
 
 	LOG_INFO("Handling request: " << request.method << " " << request.uri);
@@ -146,7 +160,6 @@ Response Response::handle_request(const Request &request)
         }
     }
 	/*	========= END ============. */
-	
 	if (request.method == "GET")
 		return (handle_get(request));
 	if (request.method == "POST")
@@ -190,6 +203,7 @@ Response Response::handle_get(const Request& request)
 	response.set_header("Date", Utils::get_http_date());
 	response.set_header("Server", SERVER);
 	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
+	
 	response.set_body(body);
 	return (response);
 }
@@ -281,6 +295,7 @@ Response Response::handle_redirect()
     response.set_header("Location", loc.redirection.to);
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
+	response._method =  _method;
     response.set_body("");
     return (response); 
 }
@@ -368,6 +383,7 @@ Response Response::handle_error(int error_code)
     response.set_header("Content-Type", "text/html; charset=UTF-8");
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
+	response._method =  _method;
     response.set_body(body);
     return response;
 }
@@ -405,7 +421,7 @@ std::string Response::file_path_check(const std::string &uri)
         root = _config->locations.at(_conf_location_path).root;
     }
 
-    std::string file_path = root + uri + (uri.find_last_of('/') == uri.size() - 1 ?  "/index.html" : "");
+    std::string file_path = root + uri + (uri.find_last_of('/') == uri.size() - 1 ?  "/index.html" : ""); // <==
 
     size_t pos;
     while ((pos = file_path.find("//")) != std::string::npos) {
@@ -429,7 +445,7 @@ std::string Response::serialize()
 {
 	std::ostringstream http_response;
 	http_response << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
-	LOG_INFO(this->_method << " " << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
+	LOG_INFO(this->_method << "" << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
 	
 	// write all headers
 	for (std::map<std::string, std::string>::const_iterator map_item = this->_headers.begin();
@@ -474,6 +490,7 @@ Response Response::response_body(const int &status_code, const std::string &body
 	response.set_header("Content-Type", "text/html; charset=UTF-8");
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
+	response._method =  _method;
 	response.set_body(body);
 	return (response); 
 }
