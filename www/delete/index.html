@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Files | webserv</title>
+    <link rel="stylesheet" href="/statics/style.css">
+    <style>
+        #fileList {
+            background: rgba(128, 128, 128, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            font-family: monospace;
+            text-align: left;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+
+        #fileList a {
+            display: block;
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button id="theme-toggle" class="theme-toggle-btn">
+            <span id="theme-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4.5"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M12 3l0 18"></path><path d="M12 9l4.65 -4.65"></path><path d="M12 14.3l7.37 -7.37"></path><path d="M12 19.6l8.85 -8.85"></path></svg>
+            </span>
+        </button>
+    </header>
+
+    <main class="container">
+        <div class="title-group">
+            <h1 class="title">Delete Files</h1>
+            <p class="subtitle">View and delete files from the server</p>
+        </div>
+        
+        <div class="card" style="max-width: 500px; width: 100%;">
+            <label class="input-label">Available files in /uploads/:</label>
+            <div id="fileList">Loading files...</div>
+            
+            <label for="filename" class="input-label">Enter the filename to delete:</label>
+            <input type="text" name="filename" id="filename" class="input-field" placeholder="e.g., test.txt" required>
+            
+            <button type="button" class="nav-btn danger" onclick="deleteFile()">Delete File</button>
+        </div>
+        
+        <div style="margin-top: 40px;">
+            <a href="/index.html"><button type="button" class="nav-btn" style="max-width: 250px;">Back to Home</button></a>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2026 webserv | Developed by Aleksandr Kuzmin | Antoine Margoloff | Lara Krämer</p>
+    </footer>
+
+    <script src="/statics/script.js"></script>
+    <script>
+    function loadFiles() {
+        const fileList = document.getElementById("fileList");
+        fileList.innerHTML = "Loading...";
+
+        fetch("/uploads/")
+            .then(res => res.text())
+            .then(html => {
+                const doc = new DOMParser().parseFromString(html, "text/html");
+                fileList.innerHTML = "";
+                let hasFiles = false;
+
+                // Перебираем все ссылки из ответа сервера
+                doc.querySelectorAll("a").forEach(link => {
+                    let href = link.getAttribute("href");
+                    if (!href) return;
+
+                    let fileName = href.split('/').filter(Boolean).pop();
+                    
+                    if (fileName) {
+                        try { fileName = decodeURIComponent(fileName); } catch(e) {}
+                    }
+
+                    if (fileName && fileName !== ".." && fileName !== "uploads") {
+                        hasFiles = true;
+                        
+                        const a = document.createElement("a");
+                        a.href = "javascript:void(0)";
+                        a.textContent = fileName;
+                        
+                        // При клике вставляем чистое имя в input
+                        a.onclick = () => document.getElementById("filename").value = fileName;
+                        
+                        fileList.appendChild(a);
+                    }
+                });
+
+                if (!hasFiles) fileList.innerHTML = "Folder is empty.";
+            })
+            .catch(() => fileList.innerHTML = "Error loading files.");
+    }
+
+    function deleteFile() {
+        const input = document.getElementById("filename");
+        const filename = input.value.trim();
+
+        if (!filename) return alert("Please enter a filename");
+
+        fetch("/uploads/" + filename, { method: "DELETE" })
+        .then(res => {
+            if (res.ok) {
+                input.value = ""; 
+                loadFiles(); 
+            } else {
+                alert("Error: File not found");
+            }
+        })
+        .catch(err => alert("Network error: " + err));
+    }
+
+    window.onload = loadFiles;
+</script>
+</body>
+</html>

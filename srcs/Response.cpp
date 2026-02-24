@@ -64,15 +64,66 @@ void Response::set_config(const Request &request) {
 	_config = &ConfigParser::get_instance().get_config(request.port, host);
 }
 
+/*
+ * @brief Validates a request against the configuration.
+ * 
+ * @param request The request to validate.
+ * If before ther is no path and query string in request, 
+ * it will be extracted from the URI and stored in request.path and request.query_string.
+ * @return true if the request is invalid, false otherwise.
+ */
+bool Response::validate_request_by_configuration(const Request &request) {
+	if (!_config) {
+		LOG_ERROR("No configuration found for request: " << request.uri);
+		return false;
+	}
+	// THAT WAS DONE IN CONNCTION but for some reason path somtimes is empty
+	// if (request.uri.find_first_of('?') != std::string::npos) {
+	// 	request.path = request.uri.substr(0, request.uri.find_first_of('?'));
+	// 	request.query_string = request.uri.substr(request.uri.find_first_of('?') + 1);
+	// } else {
+	// 	request.path = request.uri;
+	// }
+	///
+	_conf_location_path = request.uri.find_last_of("/") == 0 ? request.uri : request.uri.substr(0, request.uri.find_last_of("/"));
+	if (_conf_location_path.find('.') != std::string::npos) {
+		_conf_location_path = _conf_location_path.substr(0, _conf_location_path.find_last_of("/") + 1);
+	}
+
+	LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
+	try {
+		LocationConfig location_config = _config->locations.at(_conf_location_path);
+	} catch (const std::out_of_range& e) {
+		LOG_WARNING("No specific location config for path: \'" << _conf_location_path << "\' where uri was: \'" << request.uri << "\', using server config.");
+		return true;
+	}
+	return false;
+}
+
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
 	set_config(request);
 	set_method(request);
-	 _request_uri = request.uri;
+	/**
+	 * SET HANDLER HERE FOR CHECK CONFIG ROUTES
+	 * <---
+	 */
+	if (validate_request_by_configuration(request)) {
+		LOG_WARNING("Request validation failed for uri: " << request.uri);
+		return handle_error(404);
+	}
 
-	if (request.uri == "/old-page")
+	
+	 _request_uri = request.path;
+
+	/* Its going next, update to dinamic redirection*/
+	if (_config->locations.find(_conf_location_path) != _config->locations.end()
+		&& !_config->locations.at(_conf_location_path).redirection.from.empty()) {
 		return handle_redirect();
+	}
+	/*	========= END ============. */
+	
 	if (request.method == "GET")
 		return (handle_get(request));
 	if (request.method == "POST")
@@ -199,9 +250,9 @@ Response Response::handle_redirect()
 {
 	Response response; 
 
-	response.set_status(301);
+	response.set_status(_config->locations.at(_conf_location_path).redirection.status_code);
 	response.set_header("Content-Type", "text/html; charset=UTF-8");
-	response.set_header("Location", "/redirect.html");
+	response.set_header("Location", _config->root + _config->locations.at(_conf_location_path).redirection.to);
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
 	response.set_body("");
@@ -289,22 +340,23 @@ std::string Response::file_path_check(const std::string &uri)
 {
     std::string file_path = uri;
     
+	// Unlikely but lets say could be
 	if (!_config) {
 		LOG_ERROR(file_path << "_config is null!");
-		return "";
+		return _config->root + file_path;
 	}
 
 	if (file_path.find("/uploads/") == 0) 
 		file_path = _config->root + file_path;
-	else if (file_path == "/") {
+	else if (file_path.find("/") == 0 && file_path != "/") {
 		if (_config->index.empty()) {
 			LOG_WARNING("No index file configured, using default");
 			return _config->root + "/index.html";
 		}
-		file_path = _config->root + "/" + _config->index[0];
+		file_path = _config->root + "/" + _config->index[0] + file_path;
 	}
 	else
-		file_path = _config->root + "/base_page" + file_path;
+		file_path = _config->root + "/" + file_path;
 		
 	return file_path;
 }

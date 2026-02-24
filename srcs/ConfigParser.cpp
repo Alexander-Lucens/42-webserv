@@ -103,7 +103,7 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
             std::string port;
             while (ss >> port) {
                 remove_semicolon(port);
-                server.ports.push_back(std::atoi(port.c_str())); // ? do we need to chack that or not but just for now let it be
+                server.ports.push_back(std::atoi(port.c_str()));
             }
         }
         else if (key == "host") {
@@ -135,9 +135,27 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
             remove_semicolon(path);
             server.error_pages[code] = path;
         }
+        else if (key == "return") {
+            RedirectionPair redir;
+            ss >> redir.status_code >> redir.to;
+            redir.from = ConfigParser::trim(server.root) + "/";
+            remove_semicolon(redir.to);
+            server.redirection = redir;
+        }
         else if (key == "client_max_body_size") {
-            ss >> server.client_max_body_size;
-            
+            std::string size_str;
+            ss >> size_str;
+            remove_semicolon(size_str);
+            size_t value = std::atoi(size_str.c_str());
+            std::string unit = size_str.substr(size_str.find_first_not_of("0123456789"));
+            if (unit == "k" || unit == "K") {
+                value *= 1024;
+            } else if (unit == "m" || unit == "M") {
+                value *= 1024 * 1024;
+            } else if (unit == "g" || unit == "G") {
+                value *= 1024 * 1024 * 1024;
+            }
+            server.client_max_body_size = value;
         }
         else if (key == "location") {
             std::string path;
@@ -146,7 +164,6 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
             if (brace != "{") {
                 throw std::runtime_error("Error: Expected '{' after location path");
             }
-            // Передаем остаток строки в parse_location_block
             LocationConfig loc = parse_location_block(file, path, ss);
             server.locations[path] = loc;
         }
@@ -180,6 +197,13 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
             std::string val; first_line_ss >> val; remove_semicolon(val); loc.autoindex = (val == "on");
         } else if (key == "cgi_pass") {
             first_line_ss >> loc.cgi_ext >> loc.cgi_path; remove_semicolon(loc.cgi_path);
+        }
+        else if (key == "return") {
+            RedirectionPair redir;
+            first_line_ss >> redir.status_code >> redir.to;
+            redir.from = path;
+            remove_semicolon(redir.to);
+            loc.redirection = redir;
         }
         std::string end_brace;
         if (first_line_ss.rdbuf()->in_avail() > 0) {
@@ -230,51 +254,3 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
     }
     throw std::runtime_error("Error: Unexpected end of file inside location block");
 }
-// LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path) {
-//     LocationConfig loc;
-//     loc.path = path;
-//     std::string line;
-
-//     while (std::getline(file, line)) {
-//         line = trim(line);
-//         if (line.empty() || line[0] == '#') continue;
-
-//         if (line == "}") {
-//             return loc;
-//         }
-
-//         std::stringstream ss(line);
-//         std::string key;
-//         ss >> key;
-
-//         if (key == "root") {
-//             ss >> loc.root;
-//             remove_semicolon(loc.root);
-//         }
-//         else if (key == "index") {
-//             std::string idx;
-//             while (ss >> idx) {
-//                 remove_semicolon(idx);
-//                 loc.index.push_back(idx);
-//             }
-//         }
-//         else if (key == "methods") {
-//             std::string method;
-//             while (ss >> method) {
-//                 remove_semicolon(method);
-//                 loc.methods.push_back(method);
-//             }
-//         }
-//         else if (key == "autoindex") {
-//             std::string val;
-//             ss >> val;
-//             remove_semicolon(val);
-//             loc.autoindex = (val == "on");
-//         }
-//         else if (key == "cgi_pass") {
-//             ss >> loc.cgi_ext >> loc.cgi_path;
-//             remove_semicolon(loc.cgi_path);
-//         }
-//     }
-//     throw std::runtime_error("Error: Unexpected end of file inside location block");
-// }

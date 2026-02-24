@@ -120,7 +120,7 @@ void Connection::parse_uri() {
     if (end_pos == std::string::npos)
         return;
     this->request.path = this->request.uri.substr(start_pos, end_pos - start_pos);
-
+    
 	start_pos = end_pos + 1;
     end_pos = this->request.uri.size();
     this->request.query_string = this->request.uri.substr(start_pos, end_pos - start_pos);

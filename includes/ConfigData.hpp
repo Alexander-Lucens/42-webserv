@@ -6,6 +6,13 @@
 #include <map>
 #include <iostream>
 
+struct RedirectionPair
+{
+	std::string from;
+	std::string to;
+	int status_code;
+};
+
 struct LocationConfig {
 	std::string					path;
 	std::string					root;
@@ -14,6 +21,8 @@ struct LocationConfig {
 	bool						autoindex;
 	std::string                 cgi_path;
     std::string                 cgi_ext;
+
+	RedirectionPair				redirection;
 
 	LocationConfig() : autoindex(false) {}
 };
@@ -37,6 +46,8 @@ struct ServerConfig {
 	std::vector<std::string>		server_names;
 	std::map<int, std::string>		error_pages;
 	size_t							client_max_body_size;
+
+	RedirectionPair					redirection;
 
 	std::string						root;
 	std::vector<std::string>		index;

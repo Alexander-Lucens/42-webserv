@@ -44,12 +44,15 @@ class Request;
  */
 class Response {
 	private:
-		int _status_code;
-		std::string _html_body;
+		int									_status_code;
+		std::string							_html_body;
 		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
-		std::map<std::string, std::string> _headers;
-		std::string _method;
-		std::string _request_uri;
+		std::map<std::string, std::string>	_headers;
+		std::string							_method;
+		
+		std::string							_request_uri; // Need to think about naming and for what it to be used
+		
+
 
 		// Helper 
 		std::string			reason_message(int status_code);
@@ -62,11 +65,16 @@ class Response {
 		int					validate_file_path(const std::string& file_path);
 		Response			handle_special_routes(const std::string& uri);
 		int					validate_file_writable(const std::string& file_path);
+
+		// all things relate to check configuration
+		bool				validate_request_by_configuration(Request &request);
 		
 	public:
-		std::string version; 
+		std::string							_conf_location_path;
+
+		std::string							version; 
 		// _configuration data
-		const ServerConfig* _config;
+		const ServerConfig*					_config;
 
 		/* ----- OCF ----- */
 		Response();

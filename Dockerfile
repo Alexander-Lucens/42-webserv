@@ -14,7 +14,7 @@ WORKDIR /home/student/project
 RUN chown -R student:student /home/student/project
 
 COPY . .
-RUN make re
+RUN chown -R student:student /home/student/project
 
 
 FROM debian:bookworm-slim AS runner
