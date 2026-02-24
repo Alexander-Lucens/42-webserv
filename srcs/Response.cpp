@@ -162,12 +162,7 @@ Response Response::handle_get(const Request& request)
 {
 	LOG_INFO("Handling GET request for URI: " << request.uri);
 	std::string path = FileHandler::decode_url(request.uri); 
-	if (path == "/error-404")
-		return handle_error(404);
-	if (path == "/error-403")
-		return handle_error(403);
-	if (path == "/error-400")
-        return handle_error(400);
+	
 	if	(path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
 		return handle_get_cgi(request, *this, PYTHON);
 	if	(path.find(".rs") != std::string::npos || path.find("rust") != std::string::npos)
@@ -329,45 +324,55 @@ Response Response::handle_delete(const Request &request)
 	return ((response_body(200, body)));
 }
 
-Response Response::handle_error(const int error_code)
+std::string Response::generate_error_html(int error_code)
 {
-	std::string error_file;
-
-	
-	switch(error_code)
-	{
-		case 400: error_file = "www/errors/400.html"; break;
-		case 401: error_file = "www/errors/401.html"; break;
-		case 403: error_file = "www/errors/403.html"; break;
-		case 404: error_file = "www/errors/404.html"; break;
-		case 405: error_file = "www/errors/405.html"; break;
-		case 413: error_file = "www/errors/413.html"; break;
-		case 500: error_file = "www/errors/500.html"; break;
-		default: error_file= "www/errors/501.html";
-	}
-
-	std::string html_error_file = FileHandler::load_file(error_file); 
-	return ((response_body(error_code, html_error_file)));
+    std::string code_str;
+    std::stringstream ss;
+    ss << error_code;
+    code_str = ss.str();
+    
+    std::string html = std::string("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>") 
+        + code_str + " " + reason_message(error_code) 
+        + "</title><style>body { font-family: Arial, sans-serif; margin: 50px; }</style></head>"
+        "<body><div><h1>" + code_str + " " + reason_message(error_code) 
+        + "</h1><p>An error occurred while processing your request.</p></div></body></html>";
+    
+    return html;
 }
 
-// /* HELPER FUNCTION */
-// Response Response::handle_directory(const std::string &uri, std::string &file_path)
-// {
-// 	std::string index_file = file_path + "/";
-// 	if (!_config->index.empty()) {
-// 		index_file  += _config->index[0];
-// 	}
-// 	if (FileHandler::file_exists(index_file))
-// 	{
-// 		file_path = index_file;
-// 		return Response();
-// 	}
+Response Response::handle_error(int error_code)
+{
+    Response response;
+    response.set_status(error_code);
 
-// 	std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
-// 	if (autoindex_html.empty())
-// 		return handle_error(Utils::get_errno_code());
-// 	return response_body(200, autoindex_html);
-// }
+    std::string body;
+    std::string error_page_path = "";
+    
+    if (_config && _config->error_pages.count(error_code)) {
+        error_page_path = _config->error_pages.at(error_code);
+        
+        std::string full_path = _config->root + error_page_path;
+        
+        if (FileHandler::file_exists(full_path)) {
+            body = FileHandler::load_file(full_path);
+            LOG_INFO("Loaded error page for " << error_code << " from: " << full_path);
+        } else {
+            LOG_WARNING("Error page not found at: " << full_path << ", generating default");
+            body = generate_error_html(error_code);
+        }
+    } else {
+        LOG_DEBUG("No error page configured for code: " << error_code);
+        body = generate_error_html(error_code);
+    }
+
+    response.set_header("Content-Type", "text/html; charset=UTF-8");
+    response.set_header("Date", Utils::get_http_date());
+    response.set_header("Server", SERVER);
+    response.set_body(body);
+    return response;
+}
+
+
 Response Response::handle_directory(const std::string &uri, std::string &file_path) {
     LOG_INFO("Handling directory request for URI: " << uri);
 	std::vector<std::string> indexes = _config->index;
@@ -408,27 +413,6 @@ std::string Response::file_path_check(const std::string &uri)
     }
 
     return file_path;
-    // std::string file_path = uri;
-    
-	// // Unlikely but lets say could be
-	// if (!_config) {
-	// 	LOG_ERROR(file_path << "_config is null!");
-	// 	return _config->root + file_path;
-	// }
-
-	// if (file_path.find("/uploads/") == 0) 
-	// 	file_path = _config->root + file_path;
-	// else if (file_path.find("/") == 0 && file_path != "/") {
-	// 	if (_config->index.empty()) {
-	// 		LOG_WARNING("No index file configured, using default");
-	// 		return _config->root + "/index.html";
-	// 	}
-	// 	file_path = _config->root + "/" + _config->index[0] + file_path;
-	// }
-	// else
-	// 	file_path = _config->root + "/" + file_path;
-		
-	// return file_path;
 }
 
 /* Sends response to socket (creates one liner) */

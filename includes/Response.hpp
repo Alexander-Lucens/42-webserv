@@ -66,6 +66,9 @@ class Response {
 		Response			handle_special_routes(const std::string& uri);
 		int					validate_file_writable(const std::string& file_path);
 
+		std::string			generate_error_html(int error_code);
+
+
 		// all things relate to check configuration
 		bool				validate_request_by_configuration(const Request &request);
 		
