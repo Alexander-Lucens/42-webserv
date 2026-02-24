@@ -11,6 +11,8 @@ struct RedirectionPair
 	std::string from;
 	std::string to;
 	int status_code;
+	
+	RedirectionPair() : status_code(0) {}
 };
 
 struct LocationConfig {

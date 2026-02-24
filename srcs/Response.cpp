@@ -73,31 +73,51 @@ void Response::set_config(const Request &request) {
  * @return true if the request is invalid, false otherwise.
  */
 bool Response::validate_request_by_configuration(const Request &request) {
-	if (!_config) {
-		LOG_ERROR("No configuration found for request: " << request.uri);
-		return false;
-	}
-	// THAT WAS DONE IN CONNCTION but for some reason path somtimes is empty
-	// if (request.uri.find_first_of('?') != std::string::npos) {
-	// 	request.path = request.uri.substr(0, request.uri.find_first_of('?'));
-	// 	request.query_string = request.uri.substr(request.uri.find_first_of('?') + 1);
-	// } else {
-	// 	request.path = request.uri;
-	// }
-	///
-	_conf_location_path = request.uri.find_last_of("/") == 0 ? request.uri : request.uri.substr(0, request.uri.find_last_of("/"));
-	if (_conf_location_path.find('.') != std::string::npos) {
-		_conf_location_path = _conf_location_path.substr(0, _conf_location_path.find_last_of("/") + 1);
-	}
-
-	LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
-	try {
-		LocationConfig location_config = _config->locations.at(_conf_location_path);
-	} catch (const std::out_of_range& e) {
-		LOG_WARNING("No specific location config for path: \'" << _conf_location_path << "\' where uri was: \'" << request.uri << "\', using server config.");
-		return true;
-	}
-	return false;
+    if (!_config) {
+        LOG_ERROR("No configuration found for request: " << request.uri);
+        return false;
+    }
+    
+    std::string path = request.uri;
+    size_t query_pos = path.find('?');
+    if (query_pos != std::string::npos) {
+        path = path.substr(0, query_pos);
+    }
+    
+    std::string search_path = path;
+    if (search_path.length() > 1 && search_path[search_path.length() - 1] == '/') {
+        search_path = search_path.substr(0, search_path.length() - 1);
+    }
+    
+    std::string best_match;
+    
+    if (_config->locations.count(search_path)) {
+        best_match = search_path;
+    } else if (_config->locations.count(path)) {
+        best_match = path;
+    } else {
+		std::map<std::string, LocationConfig>::const_iterator it;
+        for (it = _config->locations.begin(); it != _config->locations.end(); ++it) {
+            if (search_path.find(it->first) == 0) {
+                if (best_match.empty() || it->first.length() > best_match.length()) {
+                    best_match = it->first;
+                }
+            }
+        }
+    }
+    
+    _conf_location_path = best_match.empty() ? "/" : best_match;
+    
+    LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
+    
+    if (_config->locations.count(_conf_location_path)) {
+        const std::vector<std::string>& methods = _config->locations.at(_conf_location_path).methods;
+        if (!methods.empty() && std::find(methods.begin(), methods.end(), request.method) == methods.end()) {
+            return true;
+        }
+    }
+	LOG_WARNING("WE PASS CONFIG AND ITS PRESENTS IN IT");
+    return false;
 }
 
 /* Filters request type and requested function  */
@@ -114,14 +134,17 @@ Response Response::handle_request(const Request &request)
 		return handle_error(404);
 	}
 
-	
+	LOG_INFO("Handling request: " << request.method << " " << request.uri);
 	 _request_uri = request.path;
 
 	/* Its going next, update to dinamic redirection*/
-	if (_config->locations.find(_conf_location_path) != _config->locations.end()
-		&& !_config->locations.at(_conf_location_path).redirection.from.empty()) {
-		return handle_redirect();
-	}
+	if (_config->locations.find(_conf_location_path) != _config->locations.end()) {
+        const LocationConfig& loc = _config->locations.at(_conf_location_path);
+		LOG_WARNING("Status code: " << loc.redirection.status_code << " redirection to: " << loc.redirection.to);
+        if (loc.redirection.status_code > 0) {
+            return handle_redirect();
+        }
+    }
 	/*	========= END ============. */
 	
 	if (request.method == "GET")
@@ -137,6 +160,7 @@ Response Response::handle_request(const Request &request)
 
 Response Response::handle_get(const Request& request)
 {
+	LOG_INFO("Handling GET request for URI: " << request.uri);
 	std::string path = FileHandler::decode_url(request.uri); 
 	if (path == "/error-404")
 		return handle_error(404);
@@ -195,11 +219,17 @@ Response Response::handle_post(const Request& request)
 	if (request.uri.find("/upload") == 0)
 		return handle_post_upload(request);
 
-	if	(request.uri.find(".py") != std::string::npos || request.uri.find(".cgi") != std::string::npos)
-		return handle_post_cgi(request, *this, PYTHON);
+	if (_config->locations.count(_conf_location_path)) {
+		std::string ext = _config->locations.at(_conf_location_path).cgi_ext;
+		if (!ext.empty() && request.uri.find(ext) != std::string::npos) {
+			return handle_post_cgi(request, *this, ext == ".py" ? PYTHON : RUST);
+		}
+	}
+	// if	(request.uri.find(".py") != std::string::npos || request.uri.find(".cgi") != std::string::npos)
+	// 	return handle_post_cgi(request, *this, PYTHON);
 
-	if	(request.uri.find(".rs") != std::string::npos || request.uri.find("rust") != std::string::npos)
-		return handle_post_cgi(request, *this, RUST);
+	// if	(request.uri.find(".rs") != std::string::npos || request.uri.find("rust") != std::string::npos)
+	// 	return handle_post_cgi(request, *this, RUST);
 
 	return handle_error(405);
 }
@@ -248,16 +278,18 @@ Response Response::handle_post_upload(const Request& request)
 
 Response Response::handle_redirect()
 {
-	Response response; 
+    Response response;
+    const LocationConfig& loc = _config->locations.at(_conf_location_path);
 
-	response.set_status(_config->locations.at(_conf_location_path).redirection.status_code);
-	response.set_header("Content-Type", "text/html; charset=UTF-8");
-	response.set_header("Location", _config->root + _config->locations.at(_conf_location_path).redirection.to);
+    response.set_status(loc.redirection.status_code);
+    response.set_header("Content-Type", "text/html; charset=UTF-8");
+    response.set_header("Location", loc.redirection.to);
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
-	response.set_body("");
-	return (response); 
+    response.set_body("");
+    return (response); 
 }
+
 Response Response::handle_delete(const Request &request)
 {
 	std::string file_name = FileHandler::decode_url(request.uri); 
@@ -301,6 +333,7 @@ Response Response::handle_error(const int error_code)
 {
 	std::string error_file;
 
+	
 	switch(error_code)
 	{
 		case 400: error_file = "www/errors/400.html"; break;
@@ -317,48 +350,85 @@ Response Response::handle_error(const int error_code)
 	return ((response_body(error_code, html_error_file)));
 }
 
-/* HELPER FUNCTION */
-Response Response::handle_directory(const std::string &uri, std::string &file_path)
-{
-	std::string index_file = file_path + "/";
-	if (!_config->index.empty()) {
-		index_file  += _config->index[0];
-	}
-	if (FileHandler::file_exists(index_file))
-	{
-		file_path = index_file;
-		return Response();
-	}
+// /* HELPER FUNCTION */
+// Response Response::handle_directory(const std::string &uri, std::string &file_path)
+// {
+// 	std::string index_file = file_path + "/";
+// 	if (!_config->index.empty()) {
+// 		index_file  += _config->index[0];
+// 	}
+// 	if (FileHandler::file_exists(index_file))
+// 	{
+// 		file_path = index_file;
+// 		return Response();
+// 	}
 
-	std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
-	if (autoindex_html.empty())
-		return handle_error(Utils::get_errno_code());
-	return response_body(200, autoindex_html);
+// 	std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
+// 	if (autoindex_html.empty())
+// 		return handle_error(Utils::get_errno_code());
+// 	return response_body(200, autoindex_html);
+// }
+Response Response::handle_directory(const std::string &uri, std::string &file_path) {
+    LOG_INFO("Handling directory request for URI: " << uri);
+	std::vector<std::string> indexes = _config->index;
+    bool autoindex = false;
+    if (_config->locations.count(_conf_location_path)) {
+        const LocationConfig& loc = _config->locations.at(_conf_location_path);
+        if (!loc.index.empty()) indexes = loc.index;
+        autoindex = loc.autoindex;
+    }
+    for (size_t i = 0; i < indexes.size(); ++i) {
+        std::string idx_path = file_path + (file_path[file_path.length()-1] == '/' ? "" : "/") + indexes[i];
+        if (FileHandler::file_exists(idx_path)) {
+            file_path = idx_path;
+            return Response();
+        }
+    }
+    if (autoindex) {
+        std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
+        if (!autoindex_html.empty()) return response_body(200, autoindex_html);
+    }
+    return handle_error(403);
 }
 
 std::string Response::file_path_check(const std::string &uri)
 {
-    std::string file_path = uri;
-    
-	// Unlikely but lets say could be
-	if (!_config) {
-		LOG_ERROR(file_path << "_config is null!");
-		return _config->root + file_path;
-	}
+	if (!_config) return "." + uri;
 
-	if (file_path.find("/uploads/") == 0) 
-		file_path = _config->root + file_path;
-	else if (file_path.find("/") == 0 && file_path != "/") {
-		if (_config->index.empty()) {
-			LOG_WARNING("No index file configured, using default");
-			return _config->root + "/index.html";
-		}
-		file_path = _config->root + "/" + _config->index[0] + file_path;
-	}
-	else
-		file_path = _config->root + "/" + file_path;
+    std::string root = _config->root;
+    if (_config->locations.count(_conf_location_path) && !_config->locations.at(_conf_location_path).root.empty()) {
+        root = _config->locations.at(_conf_location_path).root;
+    }
+
+    std::string file_path = root + uri + (uri.find_last_of('/') == uri.size() - 1 ?  "/index.html" : "");
+
+    size_t pos;
+    while ((pos = file_path.find("//")) != std::string::npos) {
+        file_path.erase(pos, 1);
+    }
+
+    return file_path;
+    // std::string file_path = uri;
+    
+	// // Unlikely but lets say could be
+	// if (!_config) {
+	// 	LOG_ERROR(file_path << "_config is null!");
+	// 	return _config->root + file_path;
+	// }
+
+	// if (file_path.find("/uploads/") == 0) 
+	// 	file_path = _config->root + file_path;
+	// else if (file_path.find("/") == 0 && file_path != "/") {
+	// 	if (_config->index.empty()) {
+	// 		LOG_WARNING("No index file configured, using default");
+	// 		return _config->root + "/index.html";
+	// 	}
+	// 	file_path = _config->root + "/" + _config->index[0] + file_path;
+	// }
+	// else
+	// 	file_path = _config->root + "/" + file_path;
 		
-	return file_path;
+	// return file_path;
 }
 
 /* Sends response to socket (creates one liner) */

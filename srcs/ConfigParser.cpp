@@ -136,11 +136,9 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
             server.error_pages[code] = path;
         }
         else if (key == "return") {
-            RedirectionPair redir;
-            ss >> redir.status_code >> redir.to;
-            redir.from = ConfigParser::trim(server.root) + "/";
-            remove_semicolon(redir.to);
-            server.redirection = redir;
+            ss >> server.redirection.status_code >> server.redirection.to;
+            server.redirection.from = server.host;
+            remove_semicolon(server.redirection.to);
         }
         else if (key == "client_max_body_size") {
             std::string size_str;
@@ -174,6 +172,85 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
     throw std::runtime_error("Error: Unexpected end of file inside server block");
 }
 
+// LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path, std::stringstream &first_line_ss) {
+//     LocationConfig loc;
+//     loc.path = path;
+//     std::string line;
+
+//     std::string key;
+//     if (first_line_ss >> key) {
+//         if (key == "}") {
+//             return loc;
+//         }
+//         if (key == "root") {
+//             first_line_ss >> loc.root;
+//             remove_semicolon(loc.root);
+//         } else if (key == "index") {
+//             std::string idx;
+//             while (first_line_ss >> idx) { remove_semicolon(idx); loc.index.push_back(idx); }
+//         } else if (key == "methods") {
+//             std::string method;
+//             while (first_line_ss >> method) { remove_semicolon(method); loc.methods.push_back(method); }
+//         } else if (key == "autoindex") {
+//             std::string val; first_line_ss >> val; remove_semicolon(val); loc.autoindex = (val == "on");
+//         } else if (key == "cgi_path") {
+//             first_line_ss >> loc.cgi_ext >> loc.cgi_path; remove_semicolon(loc.cgi_path);
+//         }
+//         else if (key == "return") {
+//             first_line_ss >> loc.redirection.status_code >> loc.redirection.to;
+//             loc.redirection.from = path;
+//             remove_semicolon(loc.redirection.to);
+//         }
+//         std::string end_brace;
+//         if (first_line_ss.rdbuf()->in_avail() > 0) {
+//             if (first_line_ss >> end_brace && end_brace == "}") {
+//                 return loc;
+//             }
+//         }
+//     }
+//     while (std::getline(file, line)) {
+//         line = trim(line);
+//         if (line.empty() || line[0] == '#') continue;
+
+//         if (line == "}") {
+//             return loc;
+//         }
+
+//         std::stringstream ss(line);
+//         ss >> key;
+
+//         if (key == "root") {
+//             ss >> loc.root;
+//             remove_semicolon(loc.root);
+//         }
+//         else if (key == "index") {
+//             std::string idx;
+//             while (ss >> idx) {
+//                 remove_semicolon(idx);
+//                 loc.index.push_back(idx);
+//             }
+//         }
+//         else if (key == "methods") {
+//             std::string method;
+//             while (ss >> method) {
+//                 remove_semicolon(method);
+//                 loc.methods.push_back(method);
+//             }
+//         }
+//         else if (key == "autoindex") {
+//             std::string val;
+//             ss >> val;
+//             remove_semicolon(val);
+//             loc.autoindex = (val == "on");
+//         }
+//         else if (key == "cgi_path") {
+//             ss >> loc.cgi_ext >> loc.cgi_path;
+//             remove_semicolon(loc.cgi_path);
+//         }
+//     }
+//     throw std::runtime_error("Error: Unexpected end of file inside location block");
+// }
+
 LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path, std::stringstream &first_line_ss) {
     LocationConfig loc;
     loc.path = path;
@@ -190,20 +267,18 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
         } else if (key == "index") {
             std::string idx;
             while (first_line_ss >> idx) { remove_semicolon(idx); loc.index.push_back(idx); }
-        } else if (key == "methods") {
+        } else if (key == "allow_methods") {
             std::string method;
             while (first_line_ss >> method) { remove_semicolon(method); loc.methods.push_back(method); }
         } else if (key == "autoindex") {
             std::string val; first_line_ss >> val; remove_semicolon(val); loc.autoindex = (val == "on");
-        } else if (key == "cgi_pass") {
+        } else if (key == "cgi_path") {
             first_line_ss >> loc.cgi_ext >> loc.cgi_path; remove_semicolon(loc.cgi_path);
         }
         else if (key == "return") {
-            RedirectionPair redir;
-            first_line_ss >> redir.status_code >> redir.to;
-            redir.from = path;
-            remove_semicolon(redir.to);
-            loc.redirection = redir;
+            first_line_ss >> loc.redirection.status_code >> loc.redirection.to;
+            loc.redirection.from = path;
+            remove_semicolon(loc.redirection.to);
         }
         std::string end_brace;
         if (first_line_ss.rdbuf()->in_avail() > 0) {
@@ -212,6 +287,7 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
             }
         }
     }
+    
     while (std::getline(file, line)) {
         line = trim(line);
         if (line.empty() || line[0] == '#') continue;
@@ -234,7 +310,7 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
                 loc.index.push_back(idx);
             }
         }
-        else if (key == "methods") {
+        else if (key == "allow_methods") {
             std::string method;
             while (ss >> method) {
                 remove_semicolon(method);
@@ -247,9 +323,14 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
             remove_semicolon(val);
             loc.autoindex = (val == "on");
         }
-        else if (key == "cgi_pass") {
+        else if (key == "cgi_path") {
             ss >> loc.cgi_ext >> loc.cgi_path;
             remove_semicolon(loc.cgi_path);
+        }
+        else if (key == "return") {
+            ss >> loc.redirection.status_code >> loc.redirection.to;
+            loc.redirection.from = path;
+            remove_semicolon(loc.redirection.to);
         }
     }
     throw std::runtime_error("Error: Unexpected end of file inside location block");
