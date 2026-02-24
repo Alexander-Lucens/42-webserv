@@ -58,7 +58,7 @@ void Request::setHeader(const std::string &key, const std::string &value) {
 void Request::clear() {
 	method.clear();
 	uri.clear();
-	// path.clear();
+	path.clear();
 	version.clear();
 	headers.clear();
 	body.clear();

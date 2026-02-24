@@ -1,6 +1,8 @@
 # include "Response.hpp"
 # include "Request.hpp"
 # include "CGI.hpp"
+# include "Logger.hpp"
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -67,6 +69,7 @@ void Response::set_config(const Request &request) {
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
+	// LOG_INFO("Path: " << request.path);
 	set_config(request);
 	set_method(request);
 	 _request_uri = request.uri;
@@ -86,23 +89,26 @@ Response Response::handle_request(const Request &request)
 
 Response Response::handle_get(const Request& request)
 {
-	std::string path = FileHandler::decode_url(request.uri); 
-	if (path == "/error-404")
+	std::string uri = FileHandler::decode_url(request.uri);
+	std::string path = FileHandler::decode_url(request.path); 
+	if (uri == "/error-404")
 		return handle_error(404);
-	if (path == "/error-403")
+	if (uri == "/error-403")
 		return handle_error(403);
-	if (path == "/error-400")
+	if (uri == "/error-400")
         return handle_error(400);
-	if	(path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
+
+	if	(path == "/cgi-bin/script.py")
 		return handle_get_cgi(request, *this, PYTHON);
-	if	(path.find(".rs") != std::string::npos || path.find("rust") != std::string::npos)
+
+	if	(path == "/cgi-bin/rust_program")
 		return handle_get_cgi(request, *this, RUST);
 
 	Response response;
-	std::string file_path = file_path_check(path);
+	std::string file_path = file_path_check(uri);
 	
 	if (FileHandler::is_directory(file_path))
-		return handle_directory(path, file_path);
+		return handle_directory(uri, file_path);
 	int status_code = validate_file_path(file_path);
 	if (status_code != 0)
 		return handle_error(status_code);
@@ -113,8 +119,8 @@ Response Response::handle_get(const Request& request)
 		LOG_ERROR("File not loading: " << file_path);
 		return (handle_error(Utils::get_errno_code())); 
 	}
-	if (path.find("/uploads/") == 0)
-		response.set_download_header(path);
+	if (uri.find("/uploads/") == 0)
+		response.set_download_header(uri);
 	
 	response.set_status(200);
 	response.set_header("Date", Utils::get_http_date());
@@ -122,7 +128,9 @@ Response Response::handle_get(const Request& request)
 	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
 	response.set_body(body);
 	return (response);
+
 }
+
 
 void Response::set_download_header(const std::string &path)
 {
@@ -144,11 +152,11 @@ Response Response::handle_post(const Request& request)
 	if (request.uri.find("/upload") == 0)
 		return handle_post_upload(request);
 
-	if	(request.uri.find(".py") != std::string::npos || request.uri.find(".cgi") != std::string::npos)
-		return handle_post_cgi(request, *this, PYTHON);
-
-	if	(request.uri.find(".rs") != std::string::npos || request.uri.find("rust") != std::string::npos)
-		return handle_post_cgi(request, *this, RUST);
+	std::string path = FileHandler::decode_url(request.path); 
+	if	(path == "/cgi-bin/script.py")
+		return handle_get_cgi(request, *this, PYTHON);
+	if	(path == "/cgi-bin/rust_program")
+		return handle_get_cgi(request, *this, RUST);
 
 	return handle_error(405);
 }
