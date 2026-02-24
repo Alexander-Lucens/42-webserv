@@ -126,6 +126,7 @@ Response Response::handle_get(const Request& request)
 	response.set_header("Date", Utils::get_http_date());
 	response.set_header("Server", SERVER);
 	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
+	response._method = _method;
 	response.set_body(body);
 	return (response);
 
@@ -199,6 +200,7 @@ Response Response::handle_post_upload(const Request& request)
 		+ std::string("</div></body></html>");
 
 	Response response = response_body(201, body);
+	response._method = _method;
 	response.set_header("Location", "/uploads/" + file_name);
 	return response;
 }
@@ -212,6 +214,7 @@ Response Response::handle_redirect()
 	response.set_header("Location", "/redirect.html");
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
+	response._method = _method;
 	response.set_body("");
 	return (response); 
 }
@@ -331,7 +334,7 @@ std::string Response::serialize()
 {
 	std::ostringstream http_response;
 	http_response << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
-	LOG_INFO(this->_method << " " << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
+	LOG_INFO(this->_method << "" << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
 	
 	// write all headers
 	for (std::map<std::string, std::string>::const_iterator map_item = this->_headers.begin();
@@ -376,6 +379,7 @@ Response Response::response_body(const int &status_code, const std::string &body
 	response.set_header("Content-Type", "text/html; charset=UTF-8");
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
+	response._method = _method;
 	response.set_body(body);
 	return (response); 
 }
