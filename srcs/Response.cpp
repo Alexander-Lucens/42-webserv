@@ -69,7 +69,9 @@ void Response::set_config(const Request &request) {
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
-	// LOG_INFO("Path: " << request.path);
+	// LOG_INFO("=== Response ===");
+	// LOG_INFO("*IMPORTANT* URI: " << request.uri);
+	// LOG_INFO("*IMPORTANT* Path: " << request.path);
 	set_config(request);
 	set_method(request);
 	 _request_uri = request.uri;
@@ -129,7 +131,6 @@ Response Response::handle_get(const Request& request)
 	response._method = _method;
 	response.set_body(body);
 	return (response);
-
 }
 
 
