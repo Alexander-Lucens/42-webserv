@@ -1,6 +1,8 @@
 # include "Response.hpp"
 # include "Request.hpp"
 # include "CGI.hpp"
+# include "Logger.hpp"
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -136,6 +138,9 @@ int Response::validate_request_by_configuration(const Request &request) {
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
+	// LOG_INFO("=== Response ===");
+	// LOG_INFO("*IMPORTANT* URI: " << request.uri);
+	// LOG_INFO("*IMPORTANT* Path: " << request.path);
 	set_config(request);
 	set_method(request);
 	
@@ -175,14 +180,15 @@ Response Response::handle_get(const Request& request)
 	
 	if	(path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
 		return handle_get_cgi(request, *this, PYTHON);
-	if	(path.find(".rs") != std::string::npos || path.find("rust") != std::string::npos)
+
+	if	(path == "/cgi-bin/rust_program")
 		return handle_get_cgi(request, *this, RUST);
 
 	Response response;
-	std::string file_path = file_path_check(path);
+	std::string file_path = file_path_check(uri);
 	
 	if (FileHandler::is_directory(file_path))
-		return handle_directory(path, file_path);
+		return handle_directory(uri, file_path);
 	int status_code = validate_file_path(file_path);
 	if (status_code != 0)
 		return handle_error(status_code);
@@ -193,8 +199,8 @@ Response Response::handle_get(const Request& request)
 		LOG_ERROR("File not loading: " << file_path);
 		return (handle_error(Utils::get_errno_code())); 
 	}
-	if (path.find("/uploads/") == 0)
-		response.set_download_header(path);
+	if (uri.find("/uploads/") == 0)
+		response.set_download_header(uri);
 	
 	response.set_status(200);
 	response.set_header("Date", Utils::get_http_date());
@@ -204,6 +210,7 @@ Response Response::handle_get(const Request& request)
 	response.set_body(body);
 	return (response);
 }
+
 
 void Response::set_download_header(const std::string &path)
 {
@@ -273,6 +280,7 @@ Response Response::handle_post_upload(const Request& request)
 		+ std::string("</div></body></html>");
 
 	Response response = response_body(201, body);
+	response._method = _method;
 	response.set_header("Location", "/uploads/" + file_name);
 	return response;
 }
@@ -437,6 +445,7 @@ std::string Response::serialize()
 {
 	std::ostringstream http_response;
 	http_response << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
+	LOG_INFO(this->_method << "" << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
 	LOG_INFO(this->_method << "" << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
 	
 	// write all headers
