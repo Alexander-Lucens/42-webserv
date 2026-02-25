@@ -138,10 +138,7 @@ Response Response::handle_request(const Request &request)
 {
 	set_config(request);
 	set_method(request);
-	/**
-	 * SET HANDLER HERE FOR CHECK CONFIG ROUTES
-	 * <---
-	 */
+	
 	int error_code = validate_request_by_configuration(request);
 	if (error_code != 0) {
 		LOG_WARNING("Request validation failed for uri: " << request.uri << " method: " << request.method << " with config location: " << _conf_location_path);
@@ -218,7 +215,7 @@ void Response::set_download_header(const std::string &path)
 	else
 		file_name = path;
 	set_header("Content-Disposition", "attachment; filename=\"" + file_name + "\"");
-	}
+}
 
 Response Response::handle_post(const Request& request)
 {
@@ -234,12 +231,7 @@ Response Response::handle_post(const Request& request)
 			return handle_post_cgi(request, *this, ext == ".py" ? PYTHON : RUST);
 		}
 	}
-	// if	(request.uri.find(".py") != std::string::npos || request.uri.find(".cgi") != std::string::npos)
-	// 	return handle_post_cgi(request, *this, PYTHON);
-
-	// if	(request.uri.find(".rs") != std::string::npos || request.uri.find("rust") != std::string::npos)
-	// 	return handle_post_cgi(request, *this, RUST);
-
+	
 	return handle_error(405);
 }
 
