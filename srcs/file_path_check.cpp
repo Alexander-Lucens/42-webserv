@@ -22,6 +22,13 @@ std::string Response::file_path_check(const std::string &uri)
             root += "/";
         }
         
+        const LocationConfig& loc = _config->locations.at(location_path);
+
+        if (loc.upload_enabled == true) {
+            LOG_DEBUG("Storage directory detected for location: " << location_path);
+            return root;
+        }
+
         std::string remaining_uri = uri;
         if (uri.find(location_path) == 0) {
             remaining_uri = uri.substr(location_path.length());
@@ -36,8 +43,9 @@ std::string Response::file_path_check(const std::string &uri)
         
         std::string file_path = root + remaining_uri;
         
-        const LocationConfig& loc = _config->locations.at(location_path);
-        if (loc.upload_enabled) {
+        // const LocationConfig& loc = _config->locations.at(location_path);
+
+        if (loc.upload_enabled == true) {
             size_t pos;
             while ((pos = file_path.find("//")) != std::string::npos) {
                 file_path.erase(pos, 1);
