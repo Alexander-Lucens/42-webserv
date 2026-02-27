@@ -193,6 +193,10 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
             while (first_line_ss >> method) { remove_semicolon(method); loc.methods.push_back(method); }
         } else if (key == "autoindex") {
             std::string val; first_line_ss >> val; remove_semicolon(val); loc.autoindex = (val == "on");
+        } else if (key == "auth_required") {
+             std::string val; first_line_ss >> val; remove_semicolon(val); loc.auth_required = (val == "on");
+        } else if (key == "upload_enabled") {
+            std::string val; first_line_ss >> val; remove_semicolon(val); loc.upload_enabled = (val == "on");
         } else if (key == "cgi_path") {
             first_line_ss >> loc.cgi_ext >> loc.cgi_path; remove_semicolon(loc.cgi_path);
         }
@@ -238,11 +242,23 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
                 loc.methods.push_back(method);
             }
         }
+        else if (key == "auth_required") {
+            std::string val;
+            ss >> val;
+            remove_semicolon(val);
+            loc.auth_required = (val == "on");
+        }
         else if (key == "autoindex") {
             std::string val;
             ss >> val;
             remove_semicolon(val);
             loc.autoindex = (val == "on");
+        }
+        else if (key == "upload_enabled") {
+            std::string val;
+            ss >> val;
+            remove_semicolon(val);
+            loc.upload_enabled = (val == "on");
         }
         else if (key == "cgi_path") {
             ss >> loc.cgi_ext >> loc.cgi_path;

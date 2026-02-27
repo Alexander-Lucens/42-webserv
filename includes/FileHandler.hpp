@@ -40,4 +40,7 @@ class FileHandler {
 		static std::string	get_file_content(const std::string &body, const std::string &boundary);
 		static std::string	extract_form_data(const std::string &body, const std::string &field_name);
 		static std::string	decode_url(const std::string &encoded);
+
+		static std::string	generate_directory_listing(const std::string &directory, const std::string &uri);
+
 };

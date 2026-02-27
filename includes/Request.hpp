@@ -35,6 +35,9 @@ class Request {
 		std::string version;
 		std::map<std::string, std::string> headers;
 
+		std::map<std::string, std::string>	_cookies;
+
+
 		std::string body;
 		
 		std::string query_string;
@@ -64,4 +67,7 @@ class Request {
 		void setHeader(const std::string &key, const std::string &value);
 		std::string toString() const;
 		void execute();
+
+		std::string	getCookie(const std::string &key) const;
+		void		parseCookies();
 };

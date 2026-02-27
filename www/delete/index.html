@@ -64,38 +64,47 @@
     </footer>
 
     <script src="/statics/script.js"></script>
+
     <script>
     function loadFiles() {
         const fileList = document.getElementById("fileList");
         fileList.innerHTML = "Loading...";
 
         fetch("/uploads/")
-            .then(res => res.text())
+            .then(res => {
+                if (!res.ok) throw new Error("Directory not found or access denied");
+                return res.text();
+            })
             .then(html => {
                 const doc = new DOMParser().parseFromString(html, "text/html");
                 fileList.innerHTML = "";
                 let hasFiles = false;
 
-                // Перебираем все ссылки из ответа сервера
+                if (doc.title.includes("webserv") && !doc.title.includes("Index of")) {
+                    fileList.innerHTML = "Error: Server did not return a directory listing. Check 'autoindex on' in config.";
+                    return;
+                }
+
                 doc.querySelectorAll("a").forEach(link => {
                     let href = link.getAttribute("href");
                     if (!href) return;
 
-                    let fileName = href.split('/').filter(Boolean).pop();
-                    
-                    if (fileName) {
-                        try { fileName = decodeURIComponent(fileName); } catch(e) {}
-                    }
+                    if (href.startsWith("/") || href.startsWith("http") || href === "../") return;
 
-                    if (fileName && fileName !== ".." && fileName !== "uploads") {
+                    let fileName = href.replace(/\/$/, "");
+                    
+                    try { fileName = decodeURIComponent(fileName); } catch(e) {}
+
+                    if (fileName && fileName !== "..") {
                         hasFiles = true;
                         
                         const a = document.createElement("a");
                         a.href = "javascript:void(0)";
-                        a.textContent = fileName;
+                        a.textContent = "📄 " + fileName; 
                         
-                        // При клике вставляем чистое имя в input
-                        a.onclick = () => document.getElementById("filename").value = fileName;
+                        a.onclick = () => {
+                            document.getElementById("filename").value = fileName;
+                        };
                         
                         fileList.appendChild(a);
                     }
@@ -103,7 +112,9 @@
 
                 if (!hasFiles) fileList.innerHTML = "Folder is empty.";
             })
-            .catch(() => fileList.innerHTML = "Error loading files.");
+            .catch(err => {
+                fileList.innerHTML = `<span style="color: var(--danger-color)">Error loading files: ${err.message}</span>`;
+            });
     }
 
     function deleteFile() {
@@ -112,13 +123,19 @@
 
         if (!filename) return alert("Please enter a filename");
 
+        if (!confirm("Are you sure you want to delete '" + filename + "'?")) return;
+
         fetch("/uploads/" + filename, { method: "DELETE" })
         .then(res => {
             if (res.ok) {
                 input.value = ""; 
-                loadFiles(); 
+                loadFiles(); // Перезагружаем список
+            } else if (res.status === 404) {
+                alert("Error: File not found on server.");
+            } else if (res.status === 403) {
+                alert("Error: Permission denied (403).");
             } else {
-                alert("Error: File not found");
+                alert("Error deleting file. Server returned: " + res.status);
             }
         })
         .catch(err => alert("Network error: " + err));

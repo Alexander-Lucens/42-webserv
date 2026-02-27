@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in | webserv</title>
+    <title>Private Section | webserv</title>
     <link rel="stylesheet" href="/statics/style.css">
 </head>
 <body>
@@ -17,21 +17,17 @@
 
     <main class="container">
         <div class="title-group">
-            <h1 class="title">Sign in</h1>
-            <p class="subtitle">Submit your details to test the POST method</p>
+            <h1 class="title">Private Area</h1>
+            <p class="subtitle">Take some Cookies and milk!</p>
+
+            <img
+    src="/statics/cookies.svg"
+    alt="Cookies and Milk"
+    class="cookies-image"
+    type="image/svg+xml"
+    style="max-width: 20rem; border-radius: 50%; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));">
         </div>
-        
-        <div class="card" style="max-width: 400px; width: 100%;">
-            <form method="POST" action="/submit" style="display: flex; flex-direction: column;">
-                <label for="username" class="input-label">Username</label>
-                <input type="text" name="username" id="username" class="input-field" placeholder="Enter username" required>
-                
-                <label for="password" class="input-label">Safety Code</label>
-                <input type="password" name="password" id="password" class="input-field" placeholder="Enter safety code" required>
-                
-                <button type="submit" class="nav-btn" style="margin-top: 10px;">Submit</button>
-            </form>
-        </div>
+
         
         <div style="margin-top: 40px;">
             <a href="/index.html"><button type="button" class="nav-btn" style="max-width: 250px;">Back to Home</button></a>

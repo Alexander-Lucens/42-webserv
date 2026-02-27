@@ -2,9 +2,38 @@
 # include "Request.hpp"
 # include "CGI.hpp"
 # include "Logger.hpp"
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+# include <signal.h>
+# include <sys/types.h>
+# include <sys/wait.h>
+# include <ctime>
+# include <sstream>
+
+#define to_string(x) static_cast<std::ostringstream&>(std::ostringstream() << (x)).str()
+
+std::string Response::generate_session_id() {
+    std::stringstream ss;
+    ss << std::time(NULL) << rand();
+    return ss.str();
+}
+
+void Response::set_cookie(const std::string &name, const std::string &value, int max_age, const std::string &path) {
+    std::string cookie = name + "=" + value;
+    
+    if (max_age >= 0) {
+        std::stringstream ss;
+        ss << max_age;
+        cookie += "; Max-Age=" + ss.str();
+    }
+    
+    cookie += "; Path=" + path;
+    cookie += "; HttpOnly";
+    
+    _headers.insert(std::pair<std::string, std::string>("Set-Cookie", cookie));
+}
+
+void Response::set_session_cookie(const std::string &name, const std::string &value) {
+    set_cookie(name, value, -1, "/");
+}
 
 // Default constructor
 Response::Response() : _status_code(200), version("HTTP/1.1") {}
@@ -16,7 +45,8 @@ Response::Response(const Response& other)
 		_headers(other._headers),
 		_method(other._method),
 		_request_uri(other._request_uri),
-		version(other.version) {}
+		_cookies(other._cookies),
+      	version(other.version)  {}
 
 // Copy assignment operator
 Response& Response::operator=(const Response& other)
@@ -29,6 +59,7 @@ Response& Response::operator=(const Response& other)
 		_method = other._method;
 		_request_uri = other._request_uri;
 		version = other.version;
+		_cookies = other._cookies;
 	}
 	return (*this);
 }
@@ -66,87 +97,19 @@ void Response::set_config(const Request &request) {
 	_config = &ConfigParser::get_instance().get_config(request.port, host);
 }
 
-/*
- * @brief Validates a request against the configuration.
- * 
- * @param request The request to validate.
- * If before ther is no path and query string in request, 
- * it will be extracted from the URI and stored in request.path and request.query_string.
- * @return true if the request is invalid, false otherwise.
- */
-int Response::validate_request_by_configuration(const Request &request) {
-    if (!_config) {
-        LOG_ERROR("No configuration found for request: " << request.uri);
-        return 500;
-    }
-    
-    std::string path = request.uri;
-    size_t query_pos = path.find('?');
-    if (query_pos != std::string::npos) {
-        path = path.substr(0, query_pos);
-    }
-    
-    std::string search_path = path;
-    if (search_path.length() > 1 && search_path[search_path.length() - 1] == '/') {
-        search_path = search_path.substr(0, search_path.length() - 1);
-    }
-    
-    std::string best_match;
-    bool exact_match = false;
-    
-    if (_config->locations.count(search_path)) {
-        best_match = search_path;
-        exact_match = true;
-    } else if (_config->locations.count(path)) {
-        best_match = path;
-        exact_match = true;
-    } else {
-        std::map<std::string, LocationConfig>::const_iterator it;
-        for (it = _config->locations.begin(); it != _config->locations.end(); ++it) {
-            if (search_path.find(it->first) == 0) {
-                if (best_match.empty() || it->first.length() > best_match.length()) {
-                    best_match = it->first;
-                }
-            }
-        }
-    }
-    
-    if (best_match.empty()) {
-        LOG_WARNING("No matching location found for URI: " << request.uri);
-        _conf_location_path = "";
-        return 404;
-    }
-    
-    _conf_location_path = best_match;
-    LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
-    
-    if (_config->locations.count(_conf_location_path)) {
-        const std::vector<std::string>& methods = _config->locations.at(_conf_location_path).methods;
-        if (!methods.empty() && std::find(methods.begin(), methods.end(), request.method) == methods.end()) {
-            if (!exact_match && _conf_location_path != "/") {
-                LOG_WARNING("Method " << request.method << " not allowed for location: " << _conf_location_path);
-                return 404;
-            }
-            return 405;
-        }
-    }
-    
-    LOG_WARNING("WE PASS CONFIG AND ITS PRESENTS IN IT");
-    return 0;
-}
-
 /* Filters request type and requested function  */
 Response Response::handle_request(const Request &request)
 {
-	// LOG_INFO("=== Response ===");
-	// LOG_INFO("*IMPORTANT* URI: " << request.uri);
-	// LOG_INFO("*IMPORTANT* Path: " << request.path);
+	const_cast<Request&>(request).parseCookies();
+
 	set_config(request);
 	set_method(request);
 	
 	int error_code = validate_request_by_configuration(request);
 	if (error_code != 0) {
-		LOG_WARNING("Request validation failed for uri: " << request.uri << " method: " << request.method << " with config location: " << _conf_location_path);
+		LOG_WARNING("Request validation failed for uri: " << request.uri 
+			<< " method: " << request.method 
+			<< " with code: " << error_code);
 		return handle_error(error_code);
 	}
 
@@ -156,9 +119,9 @@ Response Response::handle_request(const Request &request)
 	/* Its going next, update to dinamic redirection*/
 	if (_config->locations.find(_conf_location_path) != _config->locations.end()) {
         const LocationConfig& loc = _config->locations.at(_conf_location_path);
-		LOG_WARNING("Status code: " << loc.redirection.status_code << " redirection to: " << loc.redirection.to);
         if (loc.redirection.status_code > 0) {
-            return handle_redirect();
+			LOG_INFO("Redirecting with status code " << loc.redirection.status_code << " to: " << loc.redirection.to);
+            return handle_redirect(request);
         }
     }
 	/*	========= END ============. */
@@ -175,40 +138,66 @@ Response Response::handle_request(const Request &request)
 
 Response Response::handle_get(const Request& request)
 {
-	LOG_INFO("Handling GET request for URI: " << request.uri);
-	std::string path = FileHandler::decode_url(request.uri); 
-	
-	if	(path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
-		return handle_get_cgi(request, *this, PYTHON);
+    LOG_INFO("Handling GET request for URI: " << request.uri);
+    std::string path = FileHandler::decode_url(request.uri); 
+    
+    if (path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
+        return handle_get_cgi(request, *this, PYTHON);
 
-	if	(path == "/cgi-bin/rust_program")
-		return handle_get_cgi(request, *this, RUST);
+    if (path == "/cgi-bin/rust_program")
+        return handle_get_cgi(request, *this, RUST);
 
-	Response response;
-	std::string file_path = file_path_check(uri);
-	
-	if (FileHandler::is_directory(file_path))
-		return handle_directory(uri, file_path);
-	int status_code = validate_file_path(file_path);
-	if (status_code != 0)
-		return handle_error(status_code);
+    Response response;
+    std::string file_path = file_path_check(path);
+    
+    LOG_DEBUG("file_path_check returned: " << file_path);
+    LOG_DEBUG("_conf_location_path: " << _conf_location_path);
+    
+    int status_code = validate_file_path(file_path);
+    if (status_code != 0)
+        return handle_error(status_code);
 
-	std::string body = FileHandler::load_file(file_path);
-	if(body.empty())
-	{
-		LOG_ERROR("File not loading: " << file_path);
-		return (handle_error(Utils::get_errno_code())); 
-	}
-	if (uri.find("/uploads/") == 0)
-		response.set_download_header(uri);
-	
-	response.set_status(200);
-	response.set_header("Date", Utils::get_http_date());
-	response.set_header("Server", SERVER);
-	response.set_header("Content-Type", FileHandler::find_content_type(file_path));
-	
-	response.set_body(body);
-	return (response);
+    if (FileHandler::is_directory(file_path)) {
+        LOG_DEBUG("Path is directory: " << file_path);
+        
+        if (_config->locations.count(_conf_location_path)) {
+            const LocationConfig& loc = _config->locations.at(_conf_location_path);
+            
+            if (loc.upload_enabled && loc.autoindex) {
+                LOG_INFO("Directory listing for storage: " << file_path);
+                std::string html = FileHandler::generate_directory_listing(file_path, path);
+                
+                response.set_status(200);
+                response.set_header("Content-Type", "text/html; charset=UTF-8");
+                response.set_header("Date", Utils::get_http_date());
+                response.set_header("Server", SERVER);
+                response._method = _method;
+                response.set_body(html);
+                return response;
+            }
+        }
+        
+        return handle_directory(path, file_path);
+    }
+
+    std::string body = FileHandler::load_file(file_path);
+    if (body.empty()) {
+        LOG_ERROR("File not loading: " << file_path);
+        return handle_error(500);
+    }
+    
+    if (path.find("/uploads/") == 0)
+        response.set_download_header(path);
+    
+    response.set_status(200);
+    response.set_header("Date", Utils::get_http_date());
+    response.set_header("Server", SERVER);
+    response.set_header("Content-Type", FileHandler::find_content_type(file_path));
+    response.set_header("Content-Length", to_string(body.length()));
+    
+    response.set_body(body);
+    LOG_INFO("GET " << request.method << " " << request.uri << " HTTP/1.1 200 OK");
+    return response;
 }
 
 
@@ -244,13 +233,39 @@ Response Response::handle_post(const Request& request)
 
 Response Response::handle_post_submit(const Request& request)
 {
-	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
-		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
-		+ std::string("div { text-align: center; }")
-		+ std::string("h1 { color: #13d019; }")
-		+ std::string("</style></head><body><div><h1>201 Form data received</h1><p>File '") + request.body + std::string("' uploaded successfully</p></div></body></html>");
+	std::string username = parse_form_data_value(request.body, "username");
+    std::string password = parse_form_data_value(request.body, "password");
+    
+	LOG_INFO("Sign-in attempt for user: " << username);
 
-	return response_body(200, body);
+    if (username.empty() || password != _config->serverPassword) {
+		LOG_WARNING("Authentication failed for user: " << username);
+		return handle_error(401);
+	}
+
+	ServerConfig* config = const_cast<ServerConfig*>(_config);
+	
+	std::string session_id = generate_session_id();
+	config->active_sessions[session_id]["username"] = username;
+	config->active_sessions[session_id]["submit_time"] = Utils::get_http_date();
+	config->active_sessions[session_id]["authenticated"] = "true";
+
+	LOG_INFO("User '" << username << "' authenticated successfully");
+
+	std::string body = generate_success_page("Login Successful", 
+        "Welcome, " + username + "! You are now authenticated.");
+    
+    Response response;
+    response.set_status(200);
+    response.set_header("Content-Type", "text/html; charset=UTF-8");
+    response.set_header("Date", Utils::get_http_date());
+    response.set_header("Server", SERVER);
+    response.set_session_cookie("session_id", session_id);
+    response._method = _method;
+    response.set_body(body);
+    
+    return response;
+	
 }
 
 Response Response::handle_post_upload(const Request& request)
@@ -271,21 +286,26 @@ Response Response::handle_post_upload(const Request& request)
 	if (!FileHandler::save_uploaded_file(upload_path, file_content))
 		return handle_error(500);
 
-	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
-		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
-		+ std::string("div { text-align: center; }")
-		+ std::string("h1 { color: #13d019; }")
-		+ std::string("</style></head><body><div><h1>201 Created</h1><p>File '") + file_name + std::string("' uploaded successfully</p>")
-		+ std::string("<div style=\"margin-top: 30px;\"><a href=\"/index.html\"><button type=\"button\" class=\"back-btn\">Back to Home</button></a></div>")
-		+ std::string("</div></body></html>");
-
-	Response response = response_body(201, body);
-	response._method = _method;
+	std::string body = generate_success_page("201 Created", 
+        "File '" + file_name + "' uploaded successfully.");
+    
+    Response response;
+    response.set_status(201);
+    response.set_header("Content-Type", "text/html; charset=UTF-8");
+    response.set_header("Date", Utils::get_http_date());
+    response.set_header("Server", SERVER);
+	if (request._cookies.count("session_id")) {
+		std::string session_id = request._cookies.at("session_id");
+		response.set_session_cookie("session_id", session_id);
+	} 
+    response._method = _method;
 	response.set_header("Location", "/uploads/" + file_name);
-	return response;
+    response.set_body(body);
+    
+    return response;
 }
 
-Response Response::handle_redirect()
+Response Response::handle_redirect(const Request& request)
 {
     Response response;
     const LocationConfig& loc = _config->locations.at(_conf_location_path);
@@ -295,9 +315,15 @@ Response Response::handle_redirect()
     response.set_header("Location", loc.redirection.to);
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
-	response._method =  _method;
+    
+    if (request._cookies.count("session_id")) {
+        std::string session_id = request._cookies.at("session_id");
+        response.set_session_cookie("session_id", session_id);
+    }
+    
+    response._method = _method;
     response.set_body("");
-    return (response); 
+    return response;
 }
 
 Response Response::handle_delete(const Request &request)
@@ -329,30 +355,23 @@ Response Response::handle_delete(const Request &request)
 		return handle_error(Utils::get_errno_code());
 	}
 
-	std::string body = "<html><head><meta charset=\"utf-8\"><style>"
-		+ std::string("body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }")
-		+ std::string("div { text-align: center; }")
-		+ std::string("h1 { color: #13d019; }")
-		+ std::string("</style></head><body><div><h1>200 Deleted</h1><p>File '") + file_name + std::string("' successfully deleted</p>")
-		+ std::string("<div style=\"margin-top: 30px;\"><a href=\"/index.html\"><button type=\"button\" class=\"back-btn\">Back to Home</button></a></div>")
-		+ std::string("</div></body></html>");
-	return ((response_body(200, body)));
-}
-
-std::string Response::generate_error_html(int error_code)
-{
-    std::string code_str;
-    std::stringstream ss;
-    ss << error_code;
-    code_str = ss.str();
+	std::string body = generate_success_page("200 Deleted", 
+        "File '" + file_name + "' deleted successfully.");
     
-    std::string html = std::string("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>") 
-        + code_str + " " + reason_message(error_code) 
-        + "</title><style>body { font-family: Arial, sans-serif; margin: 50px; }</style></head>"
-        "<body><div><h1>" + code_str + " " + reason_message(error_code) 
-        + "</h1><p>An error occurred while processing your request.</p></div></body></html>";
+    Response response;
+    response.set_status(200);
+    response.set_header("Content-Type", "text/html; charset=UTF-8");
+    response.set_header("Date", Utils::get_http_date());
+    response.set_header("Server", SERVER);
+	if (request._cookies.count("session_id")) {
+		std::string session_id = request._cookies.at("session_id");
+		response.set_session_cookie("session_id", session_id);
+	} 
+    response._method = _method;
+	response.set_header("Location", "/uploads/" + file_name);
+    response.set_body(body);
     
-    return html;
+    return response;
 }
 
 Response Response::handle_error(int error_code)
@@ -365,70 +384,87 @@ Response Response::handle_error(int error_code)
     
     if (_config && _config->error_pages.count(error_code)) {
         error_page_path = _config->error_pages.at(error_code);
-        
         std::string full_path = _config->root + error_page_path;
         
         if (FileHandler::file_exists(full_path)) {
             body = FileHandler::load_file(full_path);
             LOG_INFO("Loaded error page for " << error_code << " from: " << full_path);
         } else {
-            LOG_WARNING("Error page not found at: " << full_path << ", generating default");
-            body = generate_error_html(error_code);
+            body = generate_error_page(error_code);
         }
     } else {
-        LOG_DEBUG("No error page configured for code: " << error_code);
-        body = generate_error_html(error_code);
+        body = generate_error_page(error_code);
     }
 
     response.set_header("Content-Type", "text/html; charset=UTF-8");
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
-	response._method =  _method;
+    response._method = _method;
     response.set_body(body);
     return response;
 }
 
-
 Response Response::handle_directory(const std::string &uri, std::string &file_path) {
     LOG_INFO("Handling directory request for URI: " << uri);
-	std::vector<std::string> indexes = _config->index;
-    bool autoindex = false;
+    
     if (_config->locations.count(_conf_location_path)) {
         const LocationConfig& loc = _config->locations.at(_conf_location_path);
-        if (!loc.index.empty()) indexes = loc.index;
-        autoindex = loc.autoindex;
-    }
-    for (size_t i = 0; i < indexes.size(); ++i) {
-        std::string idx_path = file_path + (file_path[file_path.length()-1] == '/' ? "" : "/") + indexes[i];
-        if (FileHandler::file_exists(idx_path)) {
-            file_path = idx_path;
-            return Response();
+        if (loc.upload_enabled) {
+            return handle_error(403);
         }
     }
+    
+    std::vector<std::string> indexes = _config->index;
+    bool autoindex = false;
+    
+    if (_config->locations.count(_conf_location_path)) {
+        const LocationConfig& loc = _config->locations.at(_conf_location_path);
+        if (!loc.index.empty()) 
+            indexes = loc.index;
+        autoindex = loc.autoindex;
+    }
+    
+    for (size_t i = 0; i < indexes.size(); ++i) {
+        std::string idx_path = file_path;
+        if (idx_path[idx_path.length() - 1] != '/') 
+            idx_path += "/";
+        idx_path += indexes[i];
+        
+        LOG_DEBUG("Checking for index file: " << idx_path);
+        
+        if (FileHandler::file_exists(idx_path)) {
+            LOG_INFO("Found index file: " << idx_path);
+            std::string body = FileHandler::load_file(idx_path);
+            
+            Response response;
+            response.set_status(200);
+            response.set_header("Date", Utils::get_http_date());
+            response.set_header("Server", SERVER);
+            response.set_header("Content-Type", FileHandler::find_content_type(idx_path));
+            response.set_header("Content-Length", to_string(body.size()));
+            response._method = _method;
+            response.set_body(body);
+            return response;
+        }
+    }
+    
     if (autoindex) {
+        LOG_DEBUG("Autoindex enabled for: " << file_path);
         std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
-        if (!autoindex_html.empty()) return response_body(200, autoindex_html);
+        if (!autoindex_html.empty()) {
+            Response response;
+            response.set_status(200);
+            response.set_header("Content-Type", "text/html; charset=UTF-8");
+            response.set_header("Date", Utils::get_http_date());
+            response.set_header("Server", SERVER);
+            response._method = _method;
+            response.set_body(autoindex_html);
+            return response;
+        }
     }
+    
+    LOG_WARNING("Directory access forbidden: " << file_path);
     return handle_error(403);
-}
-
-std::string Response::file_path_check(const std::string &uri)
-{
-	if (!_config) return "." + uri;
-
-    std::string root = _config->root;
-    if (_config->locations.count(_conf_location_path) && !_config->locations.at(_conf_location_path).root.empty()) {
-        root = _config->locations.at(_conf_location_path).root;
-    }
-
-    std::string file_path = root + uri + (uri.find_last_of('/') == uri.size() - 1 ?  "/index.html" : ""); // <==
-
-    size_t pos;
-    while ((pos = file_path.find("//")) != std::string::npos) {
-        file_path.erase(pos, 1);
-    }
-
-    return file_path;
 }
 
 /* Sends response to socket (creates one liner) */
@@ -530,4 +566,66 @@ int Response::validate_file_writable(const std::string& file_path)
 		return 403;
 	}
 	return 0;
+}
+
+std::string Response::parse_form_data_value(const std::string &body, const std::string &key)
+{
+    std::string search = key + "=";
+    size_t pos = body.find(search);
+    
+    if (pos == std::string::npos)
+        return "";
+    
+    pos += search.length();
+    size_t end = body.find('&', pos);
+    if (end == std::string::npos)
+        end = body.length();
+    
+    std::string value = body.substr(pos, end - pos);
+    
+    std::string decoded;
+    for (size_t i = 0; i < value.length(); ++i) {
+        if (value[i] == '+') {
+            decoded += ' ';
+        } else if (value[i] == '%' && i + 2 < value.length()) {
+            int hex_value = 0;
+            std::sscanf(value.c_str() + i + 1, "%2x", &hex_value);
+            decoded += static_cast<char>(hex_value);
+            i += 2;
+        } else {
+            decoded += value[i];
+        }
+    }
+    
+    return decoded;
+}
+
+std::string Response::generate_error_page(int error_code)
+{
+    std::string code_str;
+    std::stringstream ss;
+    ss << error_code;
+    code_str = ss.str();
+    
+    std::string title = reason_message(error_code);
+    std::string html = get_html_header(title);
+    
+    html += std::string(
+        "<main class=\"container\">\n"
+        "<h1 class=\"header-error\">" + code_str + "</h1>\n"
+        "<h2 class=\"body-error\">" + title + "</h2>\n"
+        "<p class=\"subtitle\" style=\"margin-bottom: 30px;\">An error occurred while processing your request.</p>\n"
+        "<div class=\"menu-grid\" style=\"max-width: 300px;\">\n"
+        "<a href=\"/index.html\"><button type=\"button\" class=\"nav-btn\">Back to Home</button></a>\n"
+    );
+    
+    if (error_code == 401) {
+        html += std::string(
+            "<a href=\"/submit/index.html\"><button type=\"button\" class=\"nav-btn\" style=\"margin-top: 10px;\">Go to Sign In</button></a>\n"
+        );
+    }
+    
+    html += "</div>\n</main>\n";
+    html += get_html_footer();
+    return html;
 }
