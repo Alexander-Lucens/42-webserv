@@ -138,20 +138,20 @@ Response Response::handle_request(const Request &request)
 
 Response Response::handle_get(const Request& request)
 {
-    LOG_INFO("Handling GET request for URI: " << request.uri);
+    // LOG_INFO("Handling GET request for URI: " << request.uri);
     std::string path = FileHandler::decode_url(request.uri); 
-    
-    if (path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
+
+    if (request.path == "/cgi-bin/script.py")
         return handle_get_cgi(request, *this, PYTHON);
 
-    if (path == "/cgi-bin/rust_program")
+    if (request.path == "/cgi-bin/rust_program")
         return handle_get_cgi(request, *this, RUST);
 
     Response response;
     std::string file_path = file_path_check(path);
     
-    LOG_DEBUG("file_path_check returned: " << file_path);
-    LOG_DEBUG("_conf_location_path: " << _conf_location_path);
+    // LOG_DEBUG("file_path_check returned: " << file_path);
+    // LOG_DEBUG("_conf_location_path: " << _conf_location_path);
     
     int status_code = validate_file_path(file_path);
     if (status_code != 0)

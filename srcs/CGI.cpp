@@ -29,7 +29,8 @@ void set_cgi_env(const Request& request) {
 bool execute_cgi(const Request& request, char *path, Language lang) {
 	if (lang == PYTHON)
 	{
-		execl("/opt/pyenv/shims/python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL);
+		execlp("python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL);
+		// execl("/opt/pyenv/shims/python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL);
 	}
 	else
 	{
