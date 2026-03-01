@@ -23,9 +23,7 @@ int Response::validate_request_by_configuration(const Request &request) {
     size_t query_pos = path.find('?');
     if (query_pos != std::string::npos) {
         path = path.substr(0, query_pos);
-    }
-	LOG_DEBUG("Request PATH: " << request.path << " URI: " << request.uri);
-    
+    }    
     std::string search_path = path;
     if (search_path.length() > 1 && search_path[search_path.length() - 1] == '/') {
         search_path = search_path.substr(0, search_path.length() - 1);
@@ -57,9 +55,7 @@ int Response::validate_request_by_configuration(const Request &request) {
         return 404;
     }
     
-    _conf_location_path = best_match;
-    LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
-    
+    _conf_location_path = best_match;    
     if (_config->locations.count(_conf_location_path)) {
         const std::vector<std::string>& methods = _config->locations.at(_conf_location_path).methods;
         if (!methods.empty() && std::find(methods.begin(), methods.end(), request.method) == methods.end()) {
@@ -72,14 +68,15 @@ int Response::validate_request_by_configuration(const Request &request) {
     }
 
 	if (_config->locations.at(_conf_location_path).auth_required == true) {
-		LOG_WARNING("REQUIRED AUTHENTICATION FOR LOCATION: " << _conf_location_path);
+		LOG_INFO("REQUIRED AUTHENTICATION FOR LOCATION: " << _conf_location_path);
 
         const LocationConfig& loc = _config->locations.at(_conf_location_path);
         
         if (loc.auth_required) {
             std::string session_id = request.getCookie("session_id");
+            
             if (session_id.empty()) {
-                LOG_WARNING("Authentication required, but no session_id cookie for location: " << _conf_location_path);
+                LOG_WARNING("Authentication required");
                 return 401;
             }
             if (!_config->active_sessions.count(session_id)) {
@@ -90,6 +87,5 @@ int Response::validate_request_by_configuration(const Request &request) {
             LOG_INFO("Authenticated user: " << username << " for location: " << _conf_location_path);
         }
     }    
-	LOG_ERROR("CONFIG VALIDATION PASSED. Path: " << _conf_location_path << " uri: " << request.uri);
     return 0;
 }

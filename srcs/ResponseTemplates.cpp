@@ -76,7 +76,7 @@ std::string get_inline_css()
         "-webkit-background-clip: text; background-clip: text; color: transparent; } "
         ".subtitle { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 50px; font-weight: 400; } "
         ".menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; width: 100%; max-width: 800px; } "
-        "a { text-decoration: none; } "
+        "a { text-decoration: none; color: var(--text-main)} "
         ".nav-btn { position: relative; width: 100%; padding: 16px 24px; font-size: 1rem; font-weight: 500; color: var(--text-main); "
         "background: var(--btn-bg); border: 1px solid var(--btn-border); border-radius: 2rem; "
         "backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); cursor: pointer; overflow: hidden; "
