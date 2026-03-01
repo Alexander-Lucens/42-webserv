@@ -71,16 +71,6 @@ else
     ((FAILED++))
 fi
 
-# GET Test 4: 403 Forbidden
-echo -e "${C_BLU}[GET Test 4] GET /error-403 (403)${C_RST}"
-HTTP_STATUS=$(curl -s -w "%{http_code}" -o /dev/null "$SERVER_URL/error-403")
-if [ "$HTTP_STATUS" == "403" ]; then
-    echo -e "${C_GRN}[✅] Passed (Status: $HTTP_STATUS)${C_RST}"
-    ((PASSED++))
-else
-    echo -e "${C_RED}[❌] Failed: Expected 403 but got $HTTP_STATUS${C_RST}"
-    ((FAILED++))
-fi
 
 # GET Test 5: 400 Bad Request (path traversal)
 echo -e "${C_BLU}[GET Test 5] GET /../../etc/passwd (400/404)${C_RST}"

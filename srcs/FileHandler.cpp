@@ -221,7 +221,10 @@ std::string FileHandler::handle_autoindex(const std::string &directory_path, con
 {
 	DIR* directory = opendir(directory_path.c_str());
 	if (!directory)
+	{
+		LOG_ERROR("Cannot open directory: " << directory_path);
 		return ("");
+	}
 
 	std::vector<std::string> file_entries;
 	struct dirent* entry;
