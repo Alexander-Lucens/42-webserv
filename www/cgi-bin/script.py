@@ -4,8 +4,9 @@ from urllib.parse import parse_qs
 query = os.environ.get("QUERY_STRING", "")
 params = parse_qs(query)
 
-
-name = params['name'][0]
+name = ""
+if params and params['name']:
+	name = params['name'][0]
 if not name or name == " ":
 	name = "world"
 
