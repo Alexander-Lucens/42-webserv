@@ -212,6 +212,12 @@ Response Response::handle_post(const Request& request)
 	if (request.uri.find("/upload") == 0)
 		return handle_post_upload(request);
 
+	if (request.path == "/cgi-bin/script.py")
+		return handle_post_cgi(request, *this, PYTHON);
+
+	if (request.path == "/cgi-bin/rust_program")
+		return handle_post_cgi(request, *this, RUST);
+
 	if (_config->locations.count(_conf_location_path)) {
 		std::string ext = _config->locations.at(_conf_location_path).cgi_ext;
 		if (!ext.empty() && request.uri.find(ext) != std::string::npos) {
