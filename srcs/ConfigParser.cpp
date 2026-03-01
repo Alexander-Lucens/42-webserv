@@ -106,10 +106,6 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
                 server.ports.push_back(std::atoi(port.c_str()));
             }
         }
-        else if (key == "host") {
-            ss >> server.host;
-            remove_semicolon(server.host);
-        }
         else if (key == "server_name") {
             std::string name;
             while (ss >> name) {
@@ -188,15 +184,13 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
         } else if (key == "index") {
             std::string idx;
             while (first_line_ss >> idx) { remove_semicolon(idx); loc.index.push_back(idx); }
-        } else if (key == "allow_methods") {
+        } else if (key == "limit_except") {
             std::string method;
             while (first_line_ss >> method) { remove_semicolon(method); loc.methods.push_back(method); }
         } else if (key == "autoindex") {
             std::string val; first_line_ss >> val; remove_semicolon(val); loc.autoindex = (val == "on");
         } else if (key == "auth_required") {
              std::string val; first_line_ss >> val; remove_semicolon(val); loc.auth_required = (val == "on");
-        } else if (key == "upload_enabled") {
-            std::string val; first_line_ss >> val; remove_semicolon(val); loc.upload_enabled = (val == "on");
         } else if (key == "cgi_path") {
             first_line_ss >> loc.cgi_ext >> loc.cgi_path; remove_semicolon(loc.cgi_path);
         }
@@ -235,7 +229,7 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
                 loc.index.push_back(idx);
             }
         }
-        else if (key == "allow_methods") {
+        else if (key == "limit_except") {
             std::string method;
             while (ss >> method) {
                 remove_semicolon(method);
@@ -253,12 +247,6 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
             ss >> val;
             remove_semicolon(val);
             loc.autoindex = (val == "on");
-        }
-        else if (key == "upload_enabled") {
-            std::string val;
-            ss >> val;
-            remove_semicolon(val);
-            loc.upload_enabled = (val == "on");
         }
         else if (key == "cgi_path") {
             ss >> loc.cgi_ext >> loc.cgi_path;

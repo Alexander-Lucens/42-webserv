@@ -21,8 +21,6 @@ struct LocationConfig {
 	std::vector<std::string>	index;
 	std::vector<std::string>	methods;
 	bool						autoindex;
-	bool						upload_enabled;
-;
 	bool						auth_required;
 
 	std::string                 cgi_path;
@@ -30,7 +28,7 @@ struct LocationConfig {
 
 	RedirectionPair				redirection;
 
-	LocationConfig() : autoindex(false), upload_enabled(false), auth_required(false) {}
+	LocationConfig() : autoindex(false), auth_required(false) {}
 };
 
 /**

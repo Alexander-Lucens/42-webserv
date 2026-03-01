@@ -155,7 +155,7 @@ Response Response::handle_get(const Request& request)
         if (_config->locations.count(_conf_location_path)) {
             const LocationConfig& loc = _config->locations.at(_conf_location_path);
             
-            if (loc.upload_enabled && loc.autoindex) {
+            if (loc.autoindex == true) {
                 std::string html = FileHandler::handle_autoindex(file_path, uri);
                 
                 response.set_status(200);
@@ -405,8 +405,8 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
     
     if (_config->locations.count(_conf_location_path)) {
         const LocationConfig& loc = _config->locations.at(_conf_location_path);
-        if (loc.upload_enabled) {
-            return handle_error(403);
+        if (loc.auth_required == true && !loc.autoindex) {
+            return handle_error(401);
         }
     }
     
@@ -427,7 +427,6 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
         idx_path += indexes[i];
                 
         if (FileHandler::file_exists(idx_path)) {
-            // LOG_INFO("Found index file: " << idx_path);
             std::string body = generate_success_page("200 OK", "Directory index found: " + indexes[i]);
             body += FileHandler::load_file(idx_path);
         

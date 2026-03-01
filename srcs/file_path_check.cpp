@@ -24,7 +24,7 @@ std::string Response::file_path_check(const std::string &uri)
         
         const LocationConfig& loc = _config->locations.at(location_path);
 
-        if (loc.upload_enabled == true) {
+        if (loc.autoindex == true) {
             return root;
         }
 
@@ -42,7 +42,7 @@ std::string Response::file_path_check(const std::string &uri)
         
         std::string file_path = root + remaining_uri;
         
-        if (loc.upload_enabled == true) {
+        if (loc.autoindex == true) {
             size_t pos;
             while ((pos = file_path.find("//")) != std::string::npos) {
                 file_path.erase(pos, 1);
@@ -70,7 +70,7 @@ std::string Response::file_path_check(const std::string &uri)
     
     if (_config->locations.count(location_path)) {
         const LocationConfig& loc = _config->locations.at(location_path);
-        if (loc.upload_enabled) {
+        if (loc.autoindex == true) {
             size_t pos;
             while ((pos = file_path.find("//")) != std::string::npos) {
                 file_path.erase(pos, 1);
