@@ -165,7 +165,9 @@ Response Response::handle_get(const Request& request)
             
             if (loc.upload_enabled && loc.autoindex) {
                 LOG_INFO("Directory listing for storage: " << file_path);
-                std::string html = FileHandler::generate_directory_listing(file_path, path);
+				LOG_INFO("handle_get()  file path" << file_path);
+				LOG_INFO("handle_get() URI" << path);
+                std::string html = FileHandler::handle_autoindex(path, file_path);
                 
                 response.set_status(200);
                 response.set_header("Content-Type", "text/html; charset=UTF-8");
@@ -448,9 +450,15 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
         }
     }
     
+	std::string full_directory_path = _config->root + uri;
+	LOG_INFO("handle_dir()  full directory path" << full_directory_path);
+	LOG_INFO("handle_dir()  file path" << file_path);
+	LOG_INFO("handle_dir() URI" << uri);
+
+
     if (autoindex) {
         LOG_DEBUG("Autoindex enabled for: " << file_path);
-        std::string autoindex_html = FileHandler::handle_autoindex(uri, file_path);
+        std::string autoindex_html = FileHandler::handle_autoindex(uri, full_directory_path);
         if (!autoindex_html.empty()) {
             Response response;
             response.set_status(200);

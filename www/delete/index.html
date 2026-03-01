@@ -68,7 +68,7 @@
     <script>
     function loadFiles() {
         const fileList = document.getElementById("fileList");
-        fileList.innerHTML = "Loading...";
+        fileList.innerHTML = "Loading files...";
 
         fetch("/uploads/")
             .then(res => {
@@ -80,22 +80,24 @@
                 fileList.innerHTML = "";
                 let hasFiles = false;
 
-                if (doc.title.includes("webserv") && !doc.title.includes("Index of")) {
-                    fileList.innerHTML = "Error: Server did not return a directory listing. Check 'autoindex on' in config.";
+                // Parse the structure from handle_autoindex: <ul><li><a href="...">filename</a></li></ul>
+                const listItems = doc.querySelectorAll("ul li a");
+                
+                if (listItems.length === 0) {
+                    fileList.innerHTML = "Folder is empty.";
                     return;
                 }
 
-                doc.querySelectorAll("a").forEach(link => {
+                listItems.forEach(link => {
                     let href = link.getAttribute("href");
-                    if (!href) return;
+                    if (!href || href === "..") return;
 
-                    if (href.startsWith("/") || href.startsWith("http") || href === "../") return;
-
-                    let fileName = href.replace(/\/$/, "");
+                    // Extract filename from the href path
+                    let fileName = href.split('/').pop();
                     
                     try { fileName = decodeURIComponent(fileName); } catch(e) {}
 
-                    if (fileName && fileName !== "..") {
+                    if (fileName) {
                         hasFiles = true;
                         
                         const a = document.createElement("a");
