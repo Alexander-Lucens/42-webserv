@@ -151,7 +151,6 @@ Response Response::handle_get(const Request& request)
         return handle_error(status_code);
 
     if (FileHandler::is_directory(file_path)) {
-        LOG_DEBUG("Path is directory: " << file_path);
         
         if (_config->locations.count(_conf_location_path)) {
             const LocationConfig& loc = _config->locations.at(_conf_location_path);
@@ -532,7 +531,7 @@ Response Response::response_body(const int &status_code, const std::string &body
 int Response::validate_file_path(const std::string& file_path)
 {
 	if (!FileHandler::file_exists(file_path)) {
-		LOG_INFO("404 Not Found: " << file_path);
+		LOG_WARNING("Not Found: " << file_path);
 		return 404;
     }
     if (!FileHandler::is_readable(file_path)) {

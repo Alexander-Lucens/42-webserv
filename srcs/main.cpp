@@ -36,8 +36,6 @@ void handle_sigchld(int sig) {
 }
 
 int main(int argc, char **argv) {
-    // std::signal(SIGINT, handle_signal);
-    // std::signal(SIGTERM, handle_signal);
     std::signal(SIGCHLD, handle_sigchld);
 
     int status = 0;
