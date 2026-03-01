@@ -32,7 +32,7 @@ void Response::set_cookie(const std::string &name, const std::string &value, int
 }
 
 void Response::set_session_cookie(const std::string &name, const std::string &value) {
-    set_cookie(name, value, -1, "/");
+    set_cookie(name, value, 50, "/");
 }
 
 // Default constructor
@@ -145,7 +145,7 @@ Response Response::handle_get(const Request& request)
 
     Response response;
     std::string file_path = file_path_check(uri);
-
+    
     int status_code = validate_file_path(file_path);
     if (status_code != 0)
         return handle_error(status_code);
@@ -156,7 +156,8 @@ Response Response::handle_get(const Request& request)
             const LocationConfig& loc = _config->locations.at(_conf_location_path);
             
             if (loc.upload_enabled && loc.autoindex) {
-                std::string html = FileHandler::handle_autoindex(uri, file_path);
+                std::string html = FileHandler::handle_autoindex(file_path, uri);
+                
                 response.set_status(200);
                 response.set_header("Content-Type", "text/html; charset=UTF-8");
                 response.set_header("Date", Utils::get_http_date());
@@ -424,11 +425,11 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
         if (idx_path[idx_path.length() - 1] != '/') 
             idx_path += "/";
         idx_path += indexes[i];
-        
-        // LOG_DEBUG("Checking for index file: " << idx_path);
-        
+                
         if (FileHandler::file_exists(idx_path)) {
-            std::string body = FileHandler::load_file(idx_path);
+            // LOG_INFO("Found index file: " << idx_path);
+            std::string body = generate_success_page("200 OK", "Directory index found: " + indexes[i]);
+            body += FileHandler::load_file(idx_path);
         
             Response response;
             response.set_status(200);

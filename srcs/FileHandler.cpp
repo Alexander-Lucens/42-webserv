@@ -217,9 +217,8 @@ std::string FileHandler::decode_url(const std::string &encoded)
 	Generates an HTML directory listing for given directory path. 
 	Returns HTML string or empty string on error.
 */
-std::string FileHandler::handle_autoindex(const std::string &normalized_html_path, const std::string &directory_path)
+std::string FileHandler::handle_autoindex(const std::string &directory_path, const std::string &uri)
 {
-	//  pointer to a directory stream
 	DIR* directory = opendir(directory_path.c_str());
 	if (!directory)
 	{
@@ -228,50 +227,35 @@ std::string FileHandler::handle_autoindex(const std::string &normalized_html_pat
 	}
 
 	std::vector<std::string> file_entries;
-	// structure representing a single entry 
 	struct dirent* entry;
 	while ((entry = readdir(directory)) != NULL)
 	{
-		// ignore dot files
 		if (entry->d_name[0] == '.')
 			continue;
-		// get filename
 		file_entries.push_back(entry->d_name);
 	}
 	closedir(directory);
 
-	// sort alphabetically 
 	std::sort(file_entries.begin(), file_entries.end());
-
 	std::ostringstream html;
-	html << "<!DOCTYPE html>\n"
-			<< "<html><head><meta charset=\"utf-8\">"
-			<< "<title>Index of the uploads folder</title>"
-			<< "<style>"
-			<< "body { background-color: black; color: #fffff9; font-family: Arial, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }"
-			<< "div { text-align: center; }"
-			<< "h2 { color: #fffff9; }"
-			<< "a { color: #fdfffc; text-decoration: none; }"
-			<< "a:hover { text-decoration: underline; }"
-			<< "ul { display: inline-block; text-align: left; }"
-			<< "</style>"
-			<< "</head><body>\n"
-			<< "<div>\n"
-			<< "<h1>Index of the uploads folder</h1>\n"
-			<< "<div>\n"
-			<< "<ul>\n";
+	html << get_html_header(uri);
+	html << "<main class=\"container\"><div class=\"title-group\">"
+            << "<h1 class=\"title\">" << uri << "</h1><p class=\"subtitle\">View and delete files from the server</p>\n"
+			<< "</div><div class=\"card\" style=\"max-width: 500px; flex-direction: column; width: 100%;\">\n";
+	
 
 	for (size_t i = 0; i < file_entries.size(); ++i)
 	{
 		std::string filename = file_entries[i];
-		std::string href_link = normalized_html_path;
+		std::string href_link = uri;
 		if (!href_link.empty() && href_link[href_link.size() - 1] != '/')
 			href_link += '/';
 		href_link += filename;
-		html << "<li><a href=\"" << href_link << "\">"
-				<< convert_html_chars(filename) << "</a></li>\n";
+		html << "<div style=\" padding: 5px;\"><a href=\"" << href_link << "\">"
+				<< convert_html_chars(filename) << "</a></div>\n";
 	}
-	html << "</ul></body></html>";
+	html << "</div><div style=\"margin-top: 40px;\"><a href=\"/\"><button type=\"button\" class=\"nav-btn\" style=\"max-width: 250px;\">Back to Home</button></a></div></main>";
+	html << get_html_footer();
 	return html.str();
 }
 

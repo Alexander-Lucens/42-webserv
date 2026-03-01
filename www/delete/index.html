@@ -67,82 +67,51 @@
 
     <script>
     function loadFiles() {
-        const fileList = document.getElementById("fileList");
-        fileList.innerHTML = "Loading files...";
-
         fetch("/uploads/")
-            .then(res => {
-                if (!res.ok) throw new Error("Directory not found or access denied");
-                return res.text();
-            })
+            .then(response => response.text())
             .then(html => {
-                const doc = new DOMParser().parseFromString(html, "text/html");
+                const fileList = document.getElementById("fileList");
                 fileList.innerHTML = "";
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, "text/html");
+
                 let hasFiles = false;
 
-                // Parse the structure from handle_autoindex: <ul><li><a href="...">filename</a></li></ul>
-                const listItems = doc.querySelectorAll("ul li a");
-                
-                if (listItems.length === 0) {
-                    fileList.innerHTML = "Folder is empty.";
-                    return;
-                }
+                doc.querySelectorAll("a").forEach(link => {
+                    const href = link.getAttribute("href");
+                    if (!href || href === "../") return;
 
-                listItems.forEach(link => {
-                    let href = link.getAttribute("href");
-                    if (!href || href === "..") return;
-
-                    // Extract filename from the href path
-                    let fileName = href.split('/').pop();
-                    
-                    try { fileName = decodeURIComponent(fileName); } catch(e) {}
+                    let fileName = href.replace(/\/$/, "");
+                    try {
+                        fileName = decodeURIComponent(fileName);
+                    } catch (e) {}
 
                     if (fileName) {
                         hasFiles = true;
-                        
+
                         const a = document.createElement("a");
                         a.href = "javascript:void(0)";
-                        a.textContent = "📄 " + fileName; 
-                        
+                        a.textContent = "📄 " + fileName.replace('/uploads/', '');
+
                         a.onclick = () => {
                             document.getElementById("filename").value = fileName;
                         };
-                        
+
                         fileList.appendChild(a);
                     }
                 });
 
-                if (!hasFiles) fileList.innerHTML = "Folder is empty.";
+                if (!hasFiles) {
+                    fileList.innerHTML = "Folder is empty.";
+                }
             })
-            .catch(err => {
-                fileList.innerHTML = `<span style="color: var(--danger-color)">Error loading files: ${err.message}</span>`;
+            .catch(error => {
+                console.error("Error loading files:", error);
+                const fileList = document.getElementById("fileList");
+                fileList.innerHTML = `<span style="color: var(--danger-color)">Error loading files: ${error.message}</span>`;
             });
-    }
-
-    function deleteFile() {
-        const input = document.getElementById("filename");
-        const filename = input.value.trim();
-
-        if (!filename) return alert("Please enter a filename");
-
-        if (!confirm("Are you sure you want to delete '" + filename + "'?")) return;
-
-        fetch("/uploads/" + filename, { method: "DELETE" })
-        .then(res => {
-            if (res.ok) {
-                input.value = ""; 
-                loadFiles(); // Перезагружаем список
-            } else if (res.status === 404) {
-                alert("Error: File not found on server.");
-            } else if (res.status === 403) {
-                alert("Error: Permission denied (403).");
-            } else {
-                alert("Error deleting file. Server returned: " + res.status);
-            }
-        })
-        .catch(err => alert("Network error: " + err));
-    }
-
+        }
     window.onload = loadFiles;
 </script>
 </body>
