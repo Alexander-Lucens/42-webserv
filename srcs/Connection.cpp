@@ -34,10 +34,16 @@ bool Connection::on_readable() {
         this->read_buffer.append(buffer, bytes_read);
 	}
 
-    if (bytes_read == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-        this->request.state = Request::ERROR;
-        scan_buffer(); // one last time to execute the bad request via an error 400 response and close the connection
-        return false;
+    if (bytes_read == 0) {
+        return false; // client closed the connection
+    }
+
+    if (bytes_read == -1) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            this->request.state = Request::ERROR;
+            scan_buffer(); // one last time to execute the bad request via an error 400 response and close the connection
+            return false;
+        }
     }
 
     while (true) {
@@ -60,6 +66,9 @@ bool Connection::on_writable() {
     ssize_t bytes_sent = write(_fd, this->write_buffer.c_str(), this->write_buffer.size());
 
     if (bytes_sent < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return true; 
+        }
         return false; 
     }
     this->write_buffer.erase(0, bytes_sent);

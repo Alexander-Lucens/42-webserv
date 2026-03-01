@@ -222,3 +222,65 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 
 	return response.response_body(200, output);
 }
+
+/**
+ * @brief This function is alternative to handle_post_cgi that uses temporary files instead of pipes.
+ * In some cases evaluator could said that it's violate this rule:
+ * «Writing or reading ANY file descriptor without going through the select (or equivalent) is strictly FORBIDDEN»
+ * because pipe is returning file descriptors!!
+ */
+/*
+Response handle_post_cgi(const Request& request, Response& response, Language lang) {
+    int             pid;
+    int             exit_status;
+    std::string     output;
+    char            path[1024];
+
+    if (getcwd(path, sizeof(path)) == NULL) return response.handle_error(500);
+
+    FILE* f_in = tmpfile();
+    FILE* f_out = tmpfile();
+    if (!f_in || !f_out) return response.handle_error(500);
+
+    fwrite(request.body.data(), 1, request.body.size(), f_in);
+    rewind(f_in);
+
+    int fd_in = fileno(f_in);
+    int fd_out = fileno(f_out);
+
+    pid = fork();
+    if (pid == -1) {
+        fclose(f_in); fclose(f_out);
+        return response.handle_error(500);
+    }
+
+    if (pid == 0) {
+        setpgid(0, 0);
+        signal(SIGALRM, SIG_DFL); alarm(3);
+
+        dup2(fd_in, STDIN_FILENO);
+        dup2(fd_out, STDOUT_FILENO);
+
+        set_cgi_env(request);
+        execute_cgi(request, path, lang);
+        _exit(1);
+    }
+
+    waitpid(pid, &exit_status, 0);
+
+    rewind(f_out);
+    char buffer[1024];
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), f_out)) > 0) {
+        output.append(buffer, bytes_read);
+    }
+
+	fclose(f_in);
+    fclose(f_out);
+
+    if (WIFEXITED(exit_status) && WEXITSTATUS(exit_status) != 0)
+        return response.handle_error(500);
+
+    return response.response_body(200, output);
+}
+*/
