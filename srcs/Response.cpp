@@ -144,7 +144,7 @@ Response Response::handle_get(const Request& request)
         return handle_get_cgi(request, *this, RUST);
 
     Response response;
-    std::string file_path = file_path_check(path);
+    std::string file_path = file_path_check(uri);
     
     int status_code = validate_file_path(file_path);
     if (status_code != 0)
@@ -158,7 +158,7 @@ Response Response::handle_get(const Request& request)
             
             if (loc.upload_enabled && loc.autoindex) {
                 LOG_INFO("Directory listing for storage: " << file_path);
-                std::string html = FileHandler::generate_directory_listing(file_path, path);
+                std::string html = FileHandler::handle_autoindex(file_path, uri);
                 
                 response.set_status(200);
                 response.set_header("Content-Type", "text/html; charset=UTF-8");
