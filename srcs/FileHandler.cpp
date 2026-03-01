@@ -222,7 +222,10 @@ std::string FileHandler::handle_autoindex(const std::string &normalized_html_pat
 	//  pointer to a directory stream
 	DIR* directory = opendir(directory_path.c_str());
 	if (!directory)
+	{
+		LOG_ERROR("Cannot open directory: " << directory_path);
 		return ("");
+	}
 
 	std::vector<std::string> file_entries;
 	// structure representing a single entry 
@@ -245,10 +248,10 @@ std::string FileHandler::handle_autoindex(const std::string &normalized_html_pat
 			<< "<html><head><meta charset=\"utf-8\">"
 			<< "<title>Index of the uploads folder</title>"
 			<< "<style>"
-			<< "body { background-color: black; color: #13d019; font-family: Arial, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }"
+			<< "body { background-color: black; color: #fffff9; font-family: Arial, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }"
 			<< "div { text-align: center; }"
-			<< "h2 { color: #13d019; }"
-			<< "a { color: #13d019; text-decoration: none; }"
+			<< "h2 { color: #fffff9; }"
+			<< "a { color: #fdfffc; text-decoration: none; }"
 			<< "a:hover { text-decoration: underline; }"
 			<< "ul { display: inline-block; text-align: left; }"
 			<< "</style>"
