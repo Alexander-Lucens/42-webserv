@@ -24,7 +24,7 @@ int Response::validate_request_by_configuration(const Request &request) {
     if (query_pos != std::string::npos) {
         path = path.substr(0, query_pos);
     }
-	LOG_DEBUG("Request PATH: " << request.path << " URI: " << request.uri);
+	// LOG_DEBUG("Request PATH: " << request.path << " URI: " << request.uri);
     
     std::string search_path = path;
     if (search_path.length() > 1 && search_path[search_path.length() - 1] == '/') {
@@ -58,7 +58,7 @@ int Response::validate_request_by_configuration(const Request &request) {
     }
     
     _conf_location_path = best_match;
-    LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
+    // LOG_DEBUG("CONFIG VALIDATION. Path: " << _conf_location_path << " uri: " << request.uri);
     
     if (_config->locations.count(_conf_location_path)) {
         const std::vector<std::string>& methods = _config->locations.at(_conf_location_path).methods;
@@ -90,6 +90,6 @@ int Response::validate_request_by_configuration(const Request &request) {
             LOG_INFO("Authenticated user: " << username << " for location: " << _conf_location_path);
         }
     }    
-	LOG_ERROR("CONFIG VALIDATION PASSED. Path: " << _conf_location_path << " uri: " << request.uri);
+	// LOG_INFO("CONFIG VALIDATION PASSED. Path: " << _conf_location_path << " uri: " << request.uri);
     return 0;
 }

@@ -113,14 +113,12 @@ Response Response::handle_request(const Request &request)
 		return handle_error(error_code);
 	}
 
-	LOG_INFO("Handling request: " << request.method << " " << request.uri);
 	 _request_uri = request.path;
 
-	/* Its going next, update to dinamic redirection*/
+	/* Its going next, update to dynamic redirection*/
 	if (_config->locations.find(_conf_location_path) != _config->locations.end()) {
         const LocationConfig& loc = _config->locations.at(_conf_location_path);
         if (loc.redirection.status_code > 0) {
-			LOG_INFO("Redirecting with status code " << loc.redirection.status_code << " to: " << loc.redirection.to);
             return handle_redirect(request);
         }
     }
@@ -138,21 +136,16 @@ Response Response::handle_request(const Request &request)
 
 Response Response::handle_get(const Request& request)
 {
-    LOG_INFO("Handling GET request for URI: " << request.uri);
-    std::string path = FileHandler::decode_url(request.uri); 
+    std::string uri = FileHandler::decode_url(request.uri); 
     
-    if (path.find(".py") != std::string::npos || path.find("python") != std::string::npos)
-        return handle_get_cgi(request, *this, PYTHON);
-
-    if (path == "/cgi-bin/rust_program")
+    if (request.path.find(".py") != std::string::npos || request.path.find("python") != std::string::npos)
+		return handle_get_cgi(request, *this, PYTHON);
+    if (request.path == "/cgi-bin/rust_program")
         return handle_get_cgi(request, *this, RUST);
 
     Response response;
-    std::string file_path = file_path_check(path);
-    
-    LOG_DEBUG("file_path_check returned: " << file_path);
-    LOG_DEBUG("_conf_location_path: " << _conf_location_path);
-    
+    std::string file_path = file_path_check(uri);
+
     int status_code = validate_file_path(file_path);
     if (status_code != 0)
         return handle_error(status_code);
@@ -166,8 +159,8 @@ Response Response::handle_get(const Request& request)
             if (loc.upload_enabled && loc.autoindex) {
                 LOG_INFO("Directory listing for storage: " << file_path);
 				LOG_INFO("handle_get()  file path" << file_path);
-				LOG_INFO("handle_get() URI" << path);
-                std::string html = FileHandler::handle_autoindex(path, file_path);
+				LOG_INFO("handle_get() URI" << uri);
+                std::string html = FileHandler::handle_autoindex(uri, file_path);
                 
                 response.set_status(200);
                 response.set_header("Content-Type", "text/html; charset=UTF-8");
@@ -179,7 +172,7 @@ Response Response::handle_get(const Request& request)
             }
         }
         
-        return handle_directory(path, file_path);
+        return handle_directory(uri, file_path);
     }
 
     std::string body = FileHandler::load_file(file_path);
@@ -188,8 +181,8 @@ Response Response::handle_get(const Request& request)
         return handle_error(500);
     }
     
-    if (path.find("/uploads/") == 0)
-        response.set_download_header(path);
+    if (uri.find("/uploads/") == 0)
+        response.set_download_header(uri);
     
     response.set_status(200);
     response.set_header("Date", Utils::get_http_date());
@@ -198,7 +191,8 @@ Response Response::handle_get(const Request& request)
     response.set_header("Content-Length", to_string(body.length()));
     
     response.set_body(body);
-    LOG_INFO("GET " << request.method << " " << request.uri << " HTTP/1.1 200 OK");
+	response._method = _method;
+    // LOG_INFO("GET " << request.method << " " << request.uri << " HTTP/1.1 200 OK");
     return response;
 }
 
@@ -312,6 +306,7 @@ Response Response::handle_redirect(const Request& request)
     Response response;
     const LocationConfig& loc = _config->locations.at(_conf_location_path);
 
+	LOG_INFO("Redirect status code: " << loc.redirection.status_code);
     response.set_status(loc.redirection.status_code);
     response.set_header("Content-Type", "text/html; charset=UTF-8");
     response.set_header("Location", loc.redirection.to);
@@ -407,7 +402,7 @@ Response Response::handle_error(int error_code)
 }
 
 Response Response::handle_directory(const std::string &uri, std::string &file_path) {
-    LOG_INFO("Handling directory request for URI: " << uri);
+    // LOG_INFO("Handling directory request for URI: " << uri);
     
     if (_config->locations.count(_conf_location_path)) {
         const LocationConfig& loc = _config->locations.at(_conf_location_path);
@@ -451,9 +446,9 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
     }
     
 	std::string full_directory_path = _config->root + uri;
-	LOG_INFO("handle_dir()  full directory path" << full_directory_path);
+	/* LOG_INFO("handle_dir()  full directory path" << full_directory_path);
 	LOG_INFO("handle_dir()  file path" << file_path);
-	LOG_INFO("handle_dir() URI" << uri);
+	LOG_INFO("handle_dir() URI" << uri); */
 
 
     if (autoindex) {
