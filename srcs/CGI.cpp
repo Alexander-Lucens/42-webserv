@@ -43,7 +43,7 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 	int				pipefd_in[2];
 	int				pipefd_out[2];
 	int				pid;
-	int				exit_status;
+	int				exit_status = 0;	
 	std::size_t		already_written = 0;
 	char			buffer[1024];
 	ssize_t			bytes_read;
@@ -150,7 +150,7 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 Response handle_get_cgi(const Request& request, Response& response, Language lang) {
 	int				pipefd_out[2];
 	int				pid;
-	int				exit_status;
+	int				exit_status = 0;
 	char			buffer[1024];
 	ssize_t			bytes_read;
 	std::string		output;
