@@ -73,7 +73,7 @@ struct ServerConfig {
 
 	std::string serverPassword;
 
-	ServerConfig() : client_max_body_size(0) {
+	ServerConfig() : client_max_body_size(-1) {
 		serverPassword = "UltraSecretPassword123!";
     }
 };
