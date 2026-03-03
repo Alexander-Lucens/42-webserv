@@ -31,38 +31,29 @@ You only need **Docker** to ensure a consistent development environment (Linux/D
 
 #### Quick Start
 
-1. **Launch the Environment**
-   
-   Start the Docker container with the configured environment:
-   ```bash
-   ./run.sh
-   ```
-   *This will build the image, start the container, and drop you into a Linux shell.*
-
-2. **Build the Project**
+1. **Build the Project**
    
    Inside the container:
    ```bash
    make
    ```
 
-3. **Run the Server**
+2. **Run the Server**
    
    Start the server with a configuration file:
    ```bash
-   ./webserv config/default.conf
+   ./webserv nginx.conf
    ```
 
-4. **Test in Browser**
+3. **Test in Browser**
    
    Open your browser on your host machine (outside Docker):
    - **URL:** `http://localhost:8080`
 
-5. **Stop and Exit**
+4. **Stop the server**
    
-   Inside the Docker container:
    ```bash
-   exit
+   control -c
    ```
 
 ---
@@ -101,10 +92,6 @@ curl -v http://localhost:8080/private
 curl -v http://localhost:8080/dont-have-access
 ```
 
-#### GET to trigger 400
-```bash
-curl -v http://localhost:8080/test%00.html
-```
 #### GET a file from uploads directory
 ```bash
 curl -v http://localhost:8080/uploads/webserv
@@ -117,7 +104,7 @@ curl -v -F "file=@webserv" http://localhost:8080/upload
 
 #### DELETE specific
 ```bash
-curl -v -X DELETE http://localhost:8080/uploads/filename.txt
+curl -v -X DELETE http://localhost:8080/uploads/webserv
 ```
 
 #### Basic POST with form data
@@ -125,7 +112,10 @@ curl -v -X DELETE http://localhost:8080/uploads/filename.txt
 curl -X POST -d 'username=Lara&password=enterpassword' http://localhost:8080/submit
 ```
 
-
+#### Send a request with unkown method
+```bash
+curl -v -X UNKNOWN http://localhost:8080/
+```
 ---
 
 ## Resources
@@ -153,14 +143,13 @@ curl -X POST -d 'username=Lara&password=enterpassword' http://localhost:8080/sub
 
 ## AI Usage
 
-### Tasks and Parts That Used AI Assistance
-
 * Helped design the overall architecture
 * Provided guidance on explanation of key concepts
 * Used for refactoring code 
 * Supported inline CSS styling for error pages and UI components
 * Supported refractoring on serialization logic and autoindex
 * Helped structure shell scripts for automated testing
+* Sporadically helped with debugging
 
 
 ---
