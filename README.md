@@ -73,69 +73,63 @@ You only need **Docker** to ensure a consistent development environment (Linux/D
 
 #### Basic GET request
 ```bash
-curl http://localhost:8080/
+curl -v http://localhost:8080/
 ```
 
 #### GET a specific file
 ```bash
-curl http://localhost:8080/index.html
+curl -v http://localhost:8080/index.html
 ```
 
 #### GET with custom headers
 ```bash
-curl -H "Host: example.com" http://localhost:8080/
+curl -v -H "Host: example.com" http://localhost:8080/
 ```
 
 #### GET to trigger 404
 ```bash
-curl http://localhost:8080/nonexistent.html
+curl -v http://localhost:8080/nonexistent.html
 ```
 
 #### GET to trigger 403 (Forbidden)
 ```bash
-curl http://localhost:8080/error-403.html
+curl -v http://localhost:8080/private
 ```
 
-#### GET to trigger 400 (Bad Request)
+#### GET to trigger 405 
 ```bash
-curl http://localhost:8080/error-400
+curl -v http://localhost:8080/dont-have-access
 ```
 
+#### GET to trigger 400
+```bash
+curl -v http://localhost:8080/test%00.html
+```
 #### GET a file from uploads directory
 ```bash
-curl http://localhost:8080/uploads/myfile.txt
+curl -v http://localhost:8080/uploads/webserv
 ```
 
 #### POST file upload (multipart/form-data)
 ```bash
-curl -F "file=@file2.txt" http://localhost:8080/upload
+curl -v -F "file=@webserv" http://localhost:8080/upload
 ```
 
 #### DELETE a specific file
 ```bash
-curl -X DELETE http://localhost:8080/test.txt
+curl -v -X DELETE http://localhost:8080/webserv
 ```
 
 #### DELETE with verbose output
 ```bash
-curl -v -X DELETE http://localhost:8080/test.txt
+curl -v -X DELETE http://localhost:8080/webserv
 ```
 
 #### Basic POST with form data
 ```bash
-curl -X POST -d "filename=test.txt" http://localhost:8080/submit
+curl -X POST -d 'username=Lara&password=enterpassword' http://localhost:8080/submit
 ```
 
-#### POST with JSON data
-```bash
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"name":"test"}' http://localhost:8080/submit
-```
-
-#### Malformed request (returns 400)
-```bash
-curl "http://localhost:8080/test%00.html"
-```
 
 ---
 
