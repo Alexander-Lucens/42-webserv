@@ -121,6 +121,7 @@ Response Response::handle_request(const Request &request)
             return handle_redirect(request);
         }
     }
+    // LOG_WARNING("Handling request for URI: " << request.uri << " with method: " << request.method);
 	/*	========= END ============. */
 	if (request.method == "GET")
 		return (handle_get(request));
@@ -137,8 +138,9 @@ Response Response::handle_get(const Request& request)
 {
     std::string uri = FileHandler::decode_url(request.uri); 
     
-    if (request.path.find(".py") != std::string::npos || request.path.find("python") != std::string::npos)
+    if (request.path == "/cgi-bin/script.py")
 		return handle_get_cgi(request, *this, PYTHON);
+    
     if (request.path == "/cgi-bin/rust_program")
         return handle_get_cgi(request, *this, RUST);
 
