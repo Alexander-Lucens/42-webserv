@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
         Server server(configPath);
         server.start();
     } catch (const std::exception& e) {
-        LOG_ERROR("Fatal crash: " << e.what());
+        LOG_ERROR(e.what());
         status = 1;
     }
     return status;

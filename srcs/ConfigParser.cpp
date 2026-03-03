@@ -62,7 +62,7 @@ std::vector<ServerConfig> ConfigParser::parse(const std::string &config_path) {
     _servers.clear();
     std::ifstream file(config_path.c_str());
     if (!file.is_open()) {
-        throw std::runtime_error("Error: Could not open config file: " + config_path);
+        throw std::runtime_error("Could not open config file: " + config_path);
     }
 
     std::string line;
@@ -75,7 +75,7 @@ std::vector<ServerConfig> ConfigParser::parse(const std::string &config_path) {
         if (line == "server {") {
             parse_server_block(file);
         } else {
-            throw std::runtime_error("Error: Unknown directive outside server block: " + line);
+            throw std::runtime_error("Unknown directive outside server block: " + line);
         }
     }
     file.close();
@@ -156,7 +156,7 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
             std::string brace;
             ss >> path >> brace;
             if (brace != "{") {
-                throw std::runtime_error("Error: Expected '{' after location path");
+                throw std::runtime_error("Expected '{' after location path");
             }
             LocationConfig loc = parse_location_block(file, path, ss);
             server.locations[path] = loc;
@@ -165,7 +165,7 @@ void ConfigParser::parse_server_block(std::ifstream &file) {
             std::cout << "Warning: Unknown key in server block: " << key << std::endl;
         }
     }
-    throw std::runtime_error("Error: Unexpected end of file inside server block");
+    throw std::runtime_error("Unexpected end of file inside server block");
 }
 
 LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::string path, std::stringstream &first_line_ss) {
@@ -258,5 +258,5 @@ LocationConfig ConfigParser::parse_location_block(std::ifstream &file, std::stri
             remove_semicolon(loc.redirection.to);
         }
     }
-    throw std::runtime_error("Error: Unexpected end of file inside location block");
+    throw std::runtime_error("Unexpected end of file inside location block");
 }
