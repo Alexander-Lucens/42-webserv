@@ -19,7 +19,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-SERVER_URL="http://localhost:9090"
+SERVER_URL="http://localhost:8080"
 UPLOAD_DIR="./www/uploads"
 PASSED=0
 FAILED=0
@@ -239,7 +239,7 @@ echo -e "${C_PUR}========================================${C_RST}"
 
 # Test 1: Empty Host header
 echo -e "${C_BLU}  [1] Empty Host header${C_RST}"
-STATUS=$(curl -s -w "%{http_code}" -o /dev/null -H "Host: " "http://localhost:9090/")
+STATUS=$(curl -s -w "%{http_code}" -o /dev/null -H "Host: " "http://localhost:8080/")
 echo -e "${C_GRN}  ✅ Passed (returned $STATUS)${C_RST}"
 
 # ============================================

@@ -10,7 +10,7 @@ C_YLW="\033[0;33m"
 
 CONFIG_FILE="tests/configs/simple.conf"
 VALGRIND_LOG="valgrind.log"
-PORT=9090
+PORT=8080
 
 echo -e "${C_PUR}=== Starting Valgrind Memory Test ===${C_RST}"
 
@@ -59,6 +59,6 @@ else
       else { printf "\033[0;33m%s\033[0m\n", $0 }
   }' "$VALGRIND_LOG"
   echo -e "\n${C_RED}Check $VALGRIND_LOG for full details.${C_RST}"
-  rm -rf "$VALGRIND_LOG"
+  # rm -rf "$VALGRIND_LOG"
   exit 1
 fi

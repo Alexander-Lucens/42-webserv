@@ -19,7 +19,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-SERVER_URL="http://localhost:9090"
+SERVER_URL="http://localhost:8080"
 PASSED=0
 FAILED=0
 

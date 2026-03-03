@@ -9,8 +9,9 @@
 enum ParseResult {PARSE_OK, PARSE_INCOMPLETE, PARSE_ERROR};
 enum ScanResult {CONTINUE, STOP};
 
-Connection::Connection(int fd) : _fd(fd), error_code(0), MAX_REQUEST_SIZE(0) {
+Connection::Connection(int fd, int port) : _fd(fd), _port(port), error_code(0), MAX_REQUEST_SIZE(0) {
     this->request.state = Request::REQUEST_LINE;
+    this->request.port = _port;
     std::vector<ServerConfig> servers = ConfigParser::get_instance().get_servers();
     std::vector<ServerConfig>::iterator it = servers.begin();
     for (; it != servers.end(); ++it) {
