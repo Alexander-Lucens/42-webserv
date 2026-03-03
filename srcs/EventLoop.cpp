@@ -98,9 +98,8 @@ void EventLoop::run() {
 
                     fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
-                    _connections[client_fd] = new Connection(client_fd);
-                    _connections[client_fd]->set_request_port(port);
-
+                    _connections[client_fd] = new Connection(client_fd, port);
+                    
                     struct epoll_event client_event;
                     client_event.events = EPOLLIN | EPOLLOUT | EPOLLET;
                     client_event.data.fd = client_fd;

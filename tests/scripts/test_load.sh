@@ -2,7 +2,7 @@
 set -e
 
 # Set limitation for test duration in 10 seconds to not being bored
-SERVER_URL="http://localhost:9090/"
+SERVER_URL="http://localhost:8080/"
 CONCURRENCY=10
 DURATION="10S"
 MIN_SUCCESS_RATE=95

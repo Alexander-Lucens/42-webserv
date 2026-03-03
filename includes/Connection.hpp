@@ -16,26 +16,25 @@
 class Connection {
 	private:
 		int						_fd;
+		int						_port;
 		std::string				read_buffer;
 		std::string				write_buffer;
-		// int						current_read_index;
+
 		Request					request;
 		Response				response;
+
 		int						error_code;
 		size_t					MAX_REQUEST_SIZE;
 
 	public:
-		// Connection();
-		// Connection(Socket &socket);
-		Connection(int fd);
+		Connection(int fd, int port);
 		~Connection();
 
 		const std::string& get_read_buffer() const;
 
-		// New UPDATE
 		bool on_writable();
 		bool on_readable();
-		///
+
 		void clean_buffer_for_new_request();
 
 		int  scan_buffer();
