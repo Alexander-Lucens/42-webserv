@@ -14,6 +14,10 @@ PORT=8080
 
 echo -e "${C_PUR}=== Starting Valgrind Memory Test ===${C_RST}"
 
+if rm -rf $VALGRIND_LOG; then
+  touch $VALGRIND_LOG
+fi
+
 echo -e "${C_BLU}[*] Starting webserv with Valgrind...${C_RST}"
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file="$VALGRIND_LOG" ./webserv "$CONFIG_FILE" > /dev/null 2>&1 &
 SERVER_PID=$!
@@ -32,7 +36,7 @@ if [ "$SERVER_READY" != true ]; then
   echo -e "${C_RED}[❌] Server failed to start or respond!${C_RST}"
   kill -TERM $SERVER_PID 2>/dev/null || true
   cat "$VALGRIND_LOG"
-  rm -rf "$VALGRIND_LOG"
+  # rm -rf "$VALGRIND_LOG"
   exit 1
 fi
 echo -e "${C_GRN}[✅] Server is up and running!${C_RST}"

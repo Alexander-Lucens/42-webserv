@@ -6,7 +6,6 @@
 void set_cgi_env(const Request& request) {
 	std::string		header;
 
-	// clearenv(); // start clean for safety - no injection possible
 	setenv("REQUEST_METHOD", request.method.c_str(), 1);
 	setenv("SCRIPT_NAME", request.path.c_str(), 1);
 	setenv("QUERY_STRING", request.query_string.c_str(), 1);
@@ -14,7 +13,6 @@ void set_cgi_env(const Request& request) {
 
 	std::map<std::string, std::string> headers = request.getAllHeaders();
 
-	// write loop to send in ALL of the headers all the time
 	for (std::map<std::string, std::string>::iterator it = headers.begin();
 	it != headers.end();
 	++it)
@@ -30,13 +28,12 @@ bool execute_cgi(const Request& request, char *path, Language lang) {
 	if (lang == PYTHON)
 	{
 		execlp("python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL);
-		// execl("/opt/pyenv/shims/python3", "python3", (std::string(path) + "/www" + request.path).c_str(), NULL);
 	}
 	else
 	{
 		execl("www/cgi-bin/rust_program", "rust_program", (std::string(path) + "/www" + request.path).c_str(), NULL);
 	}
-	return (false); // only ever reached if execl failed
+	return (false);
 }
 
 Response handle_post_cgi(const Request& request, Response& response, Language lang) {
@@ -81,17 +78,15 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 		return response.handle_error(500);
 	}
 
-	if (pid == 0) // child
+	if (pid == 0)
 	{
-		setpgid(0, 0); // set child process group to its own pid to avoid signal interference with parent and other children
+		setpgid(0, 0);
 		signal(SIGALRM, SIG_DFL);
 		alarm(3);
 
-		// closing unused pipes
 		close(pipefd_in[1]);
 		close(pipefd_out[0]);
 
-		// redirecting pipes to stdin and stdout
 		if (dup2(pipefd_in[0], STDIN_FILENO) == -1)
 		{
 			LOG_ERROR("CGI: dup2 error.");
@@ -103,11 +98,8 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 			_exit(1);
 		}
 
-
-			// closing fds that have been duplicated
 		close(pipefd_in[0]);
 		close(pipefd_out[1]);
-
 		set_cgi_env(request);
 
 		if (!execute_cgi(request, path, lang))
@@ -115,13 +107,9 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 			LOG_ERROR("CGI: execl failure.");
 			_exit(1);
 		}
-			
-		_exit(1); // for safety's sake
+		_exit(1);
 	}
 
-	// parent
-
-	// closing unused pipes
 	close(pipefd_in[0]);
 	close(pipefd_out[1]);
 
@@ -132,7 +120,6 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 		already_written += bytes_read;
 	}
 
-	// finished sending the job to program/interpreter
 	close(pipefd_in[1]);
 
 	while ((bytes_read = ::read(pipefd_out[0], buffer, sizeof(buffer))) > 0) {
@@ -177,16 +164,14 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 		return response.handle_error(500);
 	}
 
-	if (pid == 0) // child
+	if (pid == 0)
 	{
-		setpgid(0, 0); // set child process group to its own pid to avoid signal interference with parent and other children
+		setpgid(0, 0);
 		signal(SIGALRM, SIG_DFL);
 		alarm(3);
 		
-		// closing unused pipe
 		close(pipefd_out[0]);
 
-		// redirecting pipe to stdout
 		if (dup2(pipefd_out[1], STDOUT_FILENO) == -1)
 		{
 			LOG_ERROR("CGI: dup2 error.");
@@ -203,12 +188,9 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 			LOG_ERROR("CGI: execl failure.");
 			_exit(1);
 		}
-		_exit(1); // for safety's sake
+		_exit(1);
 	}
 
-	// parent
-
-	// closing unused pipe
 	close(pipefd_out[1]);
 
 	while ((bytes_read = ::read(pipefd_out[0], buffer, sizeof(buffer))) > 0) {
@@ -222,65 +204,3 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 
 	return response.response_body(200, output);
 }
-
-/**
- * @brief This function is alternative to handle_post_cgi that uses temporary files instead of pipes.
- * In some cases evaluator could said that it's violate this rule:
- * «Writing or reading ANY file descriptor without going through the select (or equivalent) is strictly FORBIDDEN»
- * because pipe is returning file descriptors!!
- */
-/*
-Response handle_post_cgi(const Request& request, Response& response, Language lang) {
-    int             pid;
-    int             exit_status;
-    std::string     output;
-    char            path[1024];
-
-    if (getcwd(path, sizeof(path)) == NULL) return response.handle_error(500);
-
-    FILE* f_in = tmpfile();
-    FILE* f_out = tmpfile();
-    if (!f_in || !f_out) return response.handle_error(500);
-
-    fwrite(request.body.data(), 1, request.body.size(), f_in);
-    rewind(f_in);
-
-    int fd_in = fileno(f_in);
-    int fd_out = fileno(f_out);
-
-    pid = fork();
-    if (pid == -1) {
-        fclose(f_in); fclose(f_out);
-        return response.handle_error(500);
-    }
-
-    if (pid == 0) {
-        setpgid(0, 0);
-        signal(SIGALRM, SIG_DFL); alarm(3);
-
-        dup2(fd_in, STDIN_FILENO);
-        dup2(fd_out, STDOUT_FILENO);
-
-        set_cgi_env(request);
-        execute_cgi(request, path, lang);
-        _exit(1);
-    }
-
-    waitpid(pid, &exit_status, 0);
-
-    rewind(f_out);
-    char buffer[1024];
-    size_t bytes_read;
-    while ((bytes_read = fread(buffer, 1, sizeof(buffer), f_out)) > 0) {
-        output.append(buffer, bytes_read);
-    }
-
-	fclose(f_in);
-    fclose(f_out);
-
-    if (WIFEXITED(exit_status) && WEXITSTATUS(exit_status) != 0)
-        return response.handle_error(500);
-
-    return response.response_body(200, output);
-}
-*/
