@@ -1,5 +1,7 @@
 #include "Colors.hpp"
 #include "Connection.hpp"
+#include "ConfigData.hpp"
+#include "ConfigParser.hpp"
 #include <cctype>
 #include <string>
 #include <algorithm>
@@ -7,13 +9,17 @@
 enum ParseResult {PARSE_OK, PARSE_INCOMPLETE, PARSE_ERROR};
 enum ScanResult {CONTINUE, STOP};
 
-// Connection::Connection() {}
-
-Connection::Connection(int fd) : _fd(fd) {
+Connection::Connection(int fd) : _fd(fd), error_code(0), MAX_REQUEST_SIZE(0) {
     this->request.state = Request::REQUEST_LINE;
+    std::vector<ServerConfig> servers = ConfigParser::get_instance().get_servers();
+    std::vector<ServerConfig>::iterator it = servers.begin();
+    for (; it != servers.end(); ++it) {
+        if (std::find(it->ports.begin(), it->ports.end(), request.port) != it->ports.end()) {
+            MAX_REQUEST_SIZE = it->client_max_body_size;
+            break;
+        }
+    }
 }
-
-// Connection::Connection(Socket &socket): socket(socket) {}
 
 Connection::~Connection() {
     if (_fd != -1) {
@@ -31,26 +37,37 @@ bool Connection::on_readable() {
     int     result;
 
     while ((bytes_read = ::read(_fd, buffer, sizeof(buffer))) > 0) {
+        if (this->request.state == Request::ERROR) {
+            return false;
+        }
+
         this->read_buffer.append(buffer, bytes_read);
+        if (MAX_REQUEST_SIZE != 0 && this->read_buffer.size() > MAX_REQUEST_SIZE) {
+            this->request.state = Request::ERROR;
+            this->error_code = 413;
+            scan_buffer();
+        }
 	}
 
     if (bytes_read == 0) {
-        return false; // client closed the connection
+        return false;
     }
-
     if (bytes_read == -1) {
         if (errno != EAGAIN && errno != EWOULDBLOCK) {
             this->request.state = Request::ERROR;
-            scan_buffer(); // one last time to execute the bad request via an error 400 response and close the connection
+            this->error_code = 400;
+            scan_buffer();
             return false;
         }
     }
-
-    while (true) {
-        result = scan_buffer();
-        if (result == STOP) 
-            return true;
+    if (this->request.state != Request::ERROR) {
+        while (true) {
+            result = scan_buffer();
+            if (result == STOP) 
+                return true;
+        }
     }
+    return true;
 }
 
 /**
@@ -259,12 +276,14 @@ int Connection::scan_buffer() {
             return (STOP);
         }
         case Request::ERROR: {
-			LOG_ERROR("Connection: Request parsing error");
-      		this->response = this->response.handle_error(400);
-			this->clean_buffer_for_new_request();
+            int code_to_send = (this->error_code != 0) ? this->error_code : 400;
+            LOG_ERROR("Connection: Request parsing error with code " << code_to_send);
+            this->response = this->response.handle_error(code_to_send);
+            
+            this->clean_buffer_for_new_request();
 			this->request.clear();
 			this->request.state = Request::REQUEST_LINE;
-			// new UPDATE
+
 			std::string serialized = this->response.serialize();
 			this->write_buffer += serialized;
             return (STOP);
@@ -274,17 +293,28 @@ int Connection::scan_buffer() {
 }
 
 void Connection::clean_buffer_for_new_request() {
+    if (this->request.state == Request::ERROR) {
+        this->read_buffer.clear();
+        return;
+    }
     std::string::size_type start_pos;
 
     start_pos = this->read_buffer.find("\r\n\r\n");
-    start_pos += 4;
+    if (start_pos == std::string::npos) {
+        this->read_buffer.clear();
+        return;
+    }
 
+    start_pos += 4;
     if (this->request.headers.count("content-length"))
     {
         std::size_t content_length = static_cast<std::size_t>
             (std::strtoul(this->request.headers["content-length"].c_str(), NULL, 10));
         start_pos += content_length;
-
     }
-    read_buffer.erase(0, start_pos);
+    if (start_pos < this->read_buffer.size()) {
+        this->read_buffer.erase(0, start_pos);
+    } else {
+        this->read_buffer.clear();
+    }
 }
