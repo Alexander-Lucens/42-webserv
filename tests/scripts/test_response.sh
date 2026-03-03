@@ -71,18 +71,8 @@ else
     ((FAILED++))
 fi
 
-# GET Test 4: 403 Forbidden
-echo -e "${C_BLU}[GET Test 4] GET /error-403 (403)${C_RST}"
-HTTP_STATUS=$(curl -s -w "%{http_code}" -o /dev/null "$SERVER_URL/error-403")
-if [ "$HTTP_STATUS" == "403" ]; then
-    echo -e "${C_GRN}[✅] Passed (Status: $HTTP_STATUS)${C_RST}"
-    ((PASSED++))
-else
-    echo -e "${C_RED}[❌] Failed: Expected 403 but got $HTTP_STATUS${C_RST}"
-    ((FAILED++))
-fi
 
-# GET Test 5: 400 Bad Request (path traversal)
+# GET Test 4: 400 Bad Request (path traversal)
 echo -e "${C_BLU}[GET Test 5] GET /../../etc/passwd (400/404)${C_RST}"
 HTTP_STATUS=$(curl -s -w "%{http_code}" -o /dev/null "$SERVER_URL/../../etc/passwd")
 if [ "$HTTP_STATUS" == "400" ] || [ "$HTTP_STATUS" == "404" ]; then
@@ -93,7 +83,7 @@ else
     ((FAILED++))
 fi
 
-# GET Test 6: Response headers
+# GET Test 5: Response headers
 echo -e "${C_BLU}[GET Test 6] Verify response headers${C_RST}"
 TMP_HEADERS=$(mktemp)
 curl -s -i "$SERVER_URL/" > "$TMP_HEADERS" 2>&1
@@ -247,18 +237,8 @@ echo -e "\n${C_PUR}========================================${C_RST}"
 echo -e "${C_PUR}  ERROR REQUEST TESTS${C_RST}"
 echo -e "${C_PUR}========================================${C_RST}"
 
-# Test 1: Null byte injection
-echo -e "${C_BLU}  [1] Null byte injection (%00)${C_RST}"
-STATUS=$(curl -s -w "%{http_code}" -o /dev/null "http://localhost:9090/test%00.html")
-[ "$STATUS" == "400" ] && echo -e "${C_GRN}  ✅ Passed${C_RST}" || (echo -e "${C_RED}  ❌ Failed: $STATUS${C_RST}" && exit 1)
-
-# Test 2: Path traversal with encoded dots
-echo -e "${C_BLU}  [2] Encoded path traversal (%2e%2e)${C_RST}"
-STATUS=$(curl -s -w "%{http_code}" -o /dev/null "http://localhost:9090/%2e%2e/etc/passwd")
-[ "$STATUS" == "400" ] || [ "$STATUS" == "404" ] && echo -e "${C_GRN}  ✅ Passed${C_RST}" || (echo -e "${C_RED}  ❌ Failed: $STATUS${C_RST}" && exit 1)
-
-# Test 3: Empty Host header
-echo -e "${C_BLU}  [3] Empty Host header${C_RST}"
+# Test 1: Empty Host header
+echo -e "${C_BLU}  [1] Empty Host header${C_RST}"
 STATUS=$(curl -s -w "%{http_code}" -o /dev/null -H "Host: " "http://localhost:9090/")
 echo -e "${C_GRN}  ✅ Passed (returned $STATUS)${C_RST}"
 

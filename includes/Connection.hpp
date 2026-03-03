@@ -21,6 +21,8 @@ class Connection {
 		// int						current_read_index;
 		Request					request;
 		Response				response;
+		int						error_code;
+		size_t					MAX_REQUEST_SIZE;
 
 	public:
 		// Connection();

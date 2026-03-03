@@ -16,18 +16,22 @@
 	</header>
 
 	<main class="container">
-		<div class="title-group">
+		<div class="title-group" style="margin-bottom: 20px;">
 			<h1 class="title">Welcome to webserv</h1>
 			<p class="subtitle">Browse, manage, and download files from the server</p>
 		</div>
 		
-		<div class="menu-grid">
+		<div class="menu-grid" style="margin-bottom: 40px;">
 			<a href="/uploads/"><button type="button" class="nav-btn">Browse Files</button></a>
 			<a href="/delete/index.html"><button type="button" class="nav-btn">Delete Files</button></a>
 			<a href="/upload/index.html"><button type="button" class="nav-btn">Upload Files</button></a>
 			<a href="/redirect/index.html"><button type="button" class="nav-btn">Redirect</button></a>
 			<a href="/cgi-bin/index.html"><button type="button" class="nav-btn">CGI</button></a>
-			<a href="/submit/index.html"><button type="button" class="nav-btn">Submit Files</button></a>
+			<a href="/submit/index.html"><button type="button" class="nav-btn">Sign In</button></a>
+		</div>
+		
+		<div class="menu-grid">
+			<a href="/private"><button type="button" class="nav-btn">Private Path</button></a>
 			<a href="/not-existed-page"><button type="button" class="nav-btn danger">Test 404 Error</button></a>
 			<a href="/dont-have-access"><button type="button" class="nav-btn danger">Test 405 Error</button></a>
 			<a href="/test%00.html"><button type="button" class="nav-btn danger">Test 400 Error</button></a>

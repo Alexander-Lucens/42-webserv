@@ -42,15 +42,6 @@ void Server::start() {
 	EventLoop loop(listeningSockets);
 	loop.run();
 
-	/**
-	 * Could be implemented more comands like reload, status, drop-port, etc...
-	 * but for now we will just handle exit command to gracefully shutdown the server
-	 */
-	if (std::cin >> inputCMD && inputCMD == "exit") {
-		g_running = 0;
-		LOG_INFO("Exit command received. Shutting down...");
-	}
-
 	if (!g_running) {
 		LOG_INFO("Shutting down gracefully...");
 	}

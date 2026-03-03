@@ -49,10 +49,7 @@ class Response {
 		// map - stores key-values pars like a dict (key: used to look up values, value: used for storing/retrieving)
 		std::map<std::string, std::string>	_headers;
 		std::string							_method;
-		
-		std::string							_request_uri; // Need to think about naming and for what it to be used
-		
-
+		std::string							_request_uri; 
 
 		// Helper 
 		std::string			reason_message(int status_code);
@@ -65,25 +62,23 @@ class Response {
 		int					validate_file_path(const std::string& file_path);
 		Response			handle_special_routes(const std::string& uri);
 		int					validate_file_writable(const std::string& file_path);
-
-		std::string			generate_error_html(int error_code);
-
+		std::string			generate_error_page(int error_code);
+		std::string			parse_form_data_value(const std::string &body, const std::string &key);
 
 		// all things relate to check configuration
 		int				validate_request_by_configuration(const Request &request);
 		
 	public:
 		std::string							_conf_location_path;
-
+		std::map<std::string, std::string>	_cookies;
 		std::string							version; 
-		// _configuration data
-		const ServerConfig*					_config;
+		const ServerConfig*					_config;    
 
 		/* ----- OCF ----- */
 		Response();
-		~Response();
 		Response(const Response &other);
 		Response& operator=(const Response &other);
+		~Response();
 		/* ------------- */
 
 		// Config data
@@ -93,9 +88,10 @@ class Response {
 		Response 		handle_get(const Request &request);
 		Response 		handle_post(const Request &request);
 		Response		handle_delete(const Request &request);
-		Response		handle_redirect();
+		Response		handle_redirect(const Request& request);
 
 
+		// Handler helpers
 		Response 		handle_error(const int error_code);
 		Response 		handle_request(const Request &request);
 		Response 		response_body(const int &status_code, const std::string &body);
@@ -105,7 +101,18 @@ class Response {
 		void 			set_header(const std::string &key, const std::string &value);
 		void 			set_body(const std::string &html_body);
 
+		// Cookies
+		void			set_cookie(const std::string &name, const std::string &value, int max_age, const std::string &path);
+		void			set_session_cookie(const std::string &name, const std::string &value);
+		std::string		generate_session_id();
+		
 		// Serializer 
 		std::string		serialize();
 
 };
+
+std::string get_html_header(const std::string &title);
+std::string get_html_footer();
+std::string get_inline_css();
+std::string generate_signin_page();
+std::string generate_success_page(const std::string &title, const std::string &message);

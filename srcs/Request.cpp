@@ -66,12 +66,6 @@ void Request::clear() {
 	state = REQUEST_LINE;
 }
 
-// void Request::execute() {
-//     std::cout << "HI from Request Execute" << std::endl;
-// 	this->response.handle_request(*this);
-// }
-
-/// TMP just for check
 std::string Request::toString() const {
 	std::string result;
 	result += method + " " + uri + " " + version + "\r\n";
@@ -83,4 +77,32 @@ std::string Request::toString() const {
 	result += body;
 	return result;
 }
-/// end of tmp part
+
+std::string Request::getCookie(const std::string &key) const {
+    std::map<std::string, std::string>::const_iterator it = _cookies.find(key);
+    if (it != _cookies.end())
+        return it->second;
+    return "";
+}
+
+void Request::parseCookies() {
+    std::string cookie_header = getHeader("Cookie");
+    if (cookie_header.empty())
+        return;
+    
+    std::istringstream iss(cookie_header);
+    std::string pair;
+    
+    while (std::getline(iss, pair, ';')) {
+        size_t start = pair.find_first_not_of(" \t");
+        if (start != std::string::npos)
+            pair = pair.substr(start);
+        
+        size_t eq_pos = pair.find('=');
+        if (eq_pos != std::string::npos) {
+            std::string name = pair.substr(0, eq_pos);
+            std::string value = pair.substr(eq_pos + 1);
+            _cookies[name] = value;
+        }
+    }
+}

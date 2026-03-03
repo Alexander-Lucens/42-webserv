@@ -28,6 +28,5 @@ WORKDIR /app
 
 COPY --from=builder /home/student/project/webserv /app/webserv
 COPY --from=builder /home/student/project/www /app/www
-COPY --from=builder /home/student/project/tests/configs /app/tests/configs
 
-CMD ["./webserv", "tests/configs/simple.conf"]
+CMD ["./webserv", "www/nginx.conf"]
