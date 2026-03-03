@@ -72,7 +72,8 @@ bool FileHandler::file_exists(const std::string &file_path)
 }
 
 /* 
-	Loads and returns contents of a file as a string. 
+	Loads and returns contents of a file as a string.
+	Checks also for max_file_size() 
 	Returns empty string if file cannot be read.
 */
 std::string FileHandler::load_file(const std::string &path)

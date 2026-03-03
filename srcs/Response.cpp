@@ -8,7 +8,6 @@
 # include <ctime>
 # include <sstream>
 
-#define to_string(x) static_cast<std::ostringstream&>(std::ostringstream() << (x)).str()
 
 std::string Response::generate_session_id() {
     std::stringstream ss;
@@ -183,9 +182,7 @@ Response Response::handle_get(const Request& request)
     response.set_status(200);
     response.set_header("Date", Utils::get_http_date());
     response.set_header("Server", SERVER);
-    response.set_header("Content-Type", FileHandler::find_content_type(file_path));
-    response.set_header("Content-Length", to_string(body.length()));
-    
+    response.set_header("Content-Type", FileHandler::find_content_type(file_path));    
     response.set_body(body);
 	response._method = _method;
     return response;
@@ -435,7 +432,6 @@ Response Response::handle_directory(const std::string &uri, std::string &file_pa
             response.set_header("Date", Utils::get_http_date());
             response.set_header("Server", SERVER);
             response.set_header("Content-Type", FileHandler::find_content_type(idx_path));
-            response.set_header("Content-Length", to_string(body.size()));
             response._method = _method;
             response.set_body(body);
             return response;
