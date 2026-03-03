@@ -115,14 +115,9 @@ curl -v http://localhost:8080/uploads/webserv
 curl -v -F "file=@webserv" http://localhost:8080/upload
 ```
 
-#### DELETE a specific file
+#### DELETE specific
 ```bash
-curl -v -X DELETE http://localhost:8080/webserv
-```
-
-#### DELETE with verbose output
-```bash
-curl -v -X DELETE http://localhost:8080/webserv
+curl -v -X DELETE http://localhost:8080/uploads/filename.txt
 ```
 
 #### Basic POST with form data
