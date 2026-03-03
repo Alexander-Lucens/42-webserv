@@ -478,7 +478,6 @@ std::string Response::serialize()
 	std::ostringstream http_response;
 	http_response << version << " " << _status_code << " " << reason_message(_status_code) << NEW_LINE;
 	LOG_INFO(this->_method << "" << this->_request_uri << " " << version << " " << _status_code << " " << reason_message(_status_code));
-
 	
 	// write all headers
 	for (std::map<std::string, std::string>::const_iterator map_item = this->_headers.begin();
@@ -503,6 +502,7 @@ std::string Response::reason_message(int status_code)
 		case 204: return "No Content";
 		case 301: return "Moved Permanently";
 		case 400: return "Bad Request";
+		case 401: return "Unauthorized";
 		case 403: return "Forbidden";
 		case 404: return "Not Found";
 		case 405: return "Method Not Allowed";
@@ -564,6 +564,10 @@ int Response::validate_file_writable(const std::string& file_path)
 	return 0;
 }
 
+/**
+ * Parses and extracts a form data value from URL-encoded body
+ * Returns decoded value associated with key, or empty string if key not found
+ */
 std::string Response::parse_form_data_value(const std::string &body, const std::string &key)
 {
     std::string search = key + "=";
