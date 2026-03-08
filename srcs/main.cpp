@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include <sys/epoll.h>
 
-
 #include <iostream>
 #include <vector>
 #include <set>
@@ -15,7 +14,6 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
 #include <sstream>
 
 #include "Server.hpp"
@@ -28,11 +26,18 @@ volatile std::sig_atomic_t g_running = 1;
 void handle_signal(int sig) {
     (void)sig;
     g_running = 0;
+    static int signal_count = 0;
+    signal_count++;
+    if (signal_count > 1) {
+        std::cerr << "Force exit..." << std::endl;
+        _exit(EXIT_SUCCESS);
+    }
 }
 
 void handle_sigchld(int sig) {
     (void)sig;
-    while(waitpid(-1, NULL, WNOHANG) > 0);
+    int status;
+    while(waitpid(-1, &status, WNOHANG) > 0);
 }
 
 int main(int argc, char **argv) {

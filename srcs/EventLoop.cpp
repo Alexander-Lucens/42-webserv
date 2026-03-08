@@ -1,9 +1,14 @@
 #include "EventLoop.hpp"
 #include <sys/epoll.h>
-#include <cerrno>
 #include <csignal>
 
 extern volatile sig_atomic_t g_running;
+
+void graceful_close(int fd) {
+    try {
+        close(fd);
+    } catch (...) {}
+}
 
 EventLoop::EventLoop(const std::vector<Socket*>& sockets) : _serverSockets(sockets) {
 	_epoll_fd = epoll_create1(0);
@@ -15,12 +20,16 @@ EventLoop::EventLoop(const std::vector<Socket*>& sockets) : _serverSockets(socke
 
 EventLoop::~EventLoop() {
 	for (std::map<int, Connection*>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
-		close(it->first);
-        delete it->second;
+		graceful_close(it->first);
+        try {
+            delete it->second;
+        } catch (...) {}
 	}
-	if (_epoll_fd != -1) close(_epoll_fd);
+	if (_epoll_fd != -1) {
+        graceful_close(_epoll_fd);
+    }
     for (size_t i = 0; i < _serverSockets.size(); ++i) {
-        close(_serverSockets[i]->getFd());
+        graceful_close(_serverSockets[i]->getFd());
     }
 }
 
@@ -34,7 +43,6 @@ void EventLoop::init() {
         if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
             throw std::runtime_error("EventLoop::init() -> Failed to add server socket to epoll");
         }
-        std::cout << GREEN << " [EventLoop] Added Server Socket FD: " << fd << RESET << std::endl;
     }
 }
 
@@ -64,12 +72,14 @@ void EventLoop::run() {
     std::cout << "Server is running. Waiting..." << std::endl;
 
     while (g_running) {
-        int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
+        int num_events = epoll_wait(_epoll_fd, events, MAX_EVENTS, 500);        
         if (num_events == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            throw std::runtime_error("epoll_wait failed");
+            continue;
+        }
+
+        if (!g_running) {
+            std::cout << "Shutdown signal received" << std::endl;
+            break;
         }
 
         for (int i = 0; i < num_events; ++i) {
@@ -92,8 +102,7 @@ void EventLoop::run() {
                     int client_fd = accept(current_fd, (struct sockaddr *)&client_addr, &client_len);
 
                     if (client_fd == -1) {
-                        if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-                        else continue;
+                        break;
                     }
 
                     fcntl(client_fd, F_SETFL, O_NONBLOCK);
@@ -121,7 +130,6 @@ void EventLoop::run() {
                         }
                     }
                     if (events[i].events & EPOLLOUT) {
-                        // TO DO
                         if (!conn->on_writable()) {
                             epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, current_fd, NULL);
                             delete conn;
@@ -133,5 +141,16 @@ void EventLoop::run() {
                 }
             }
         }
+    }
+
+    LOG_INFO("Closing all remaining connections...");
+    std::map<int, Connection*>::iterator it = _connections.begin();
+    while (it != _connections.end()) {
+        int fd = it->first;
+        Connection* conn = it->second;
+        epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+        delete conn;
+        close(fd);
+        _connections.erase(it++);
     }
 }

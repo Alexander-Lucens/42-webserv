@@ -49,17 +49,8 @@ bool Connection::on_readable() {
             scan_buffer();
         }
 	}
-
     if (bytes_read == 0) {
         return false;
-    }
-    if (bytes_read == -1) {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            this->request.state = Request::ERROR;
-            this->error_code = 400;
-            scan_buffer();
-            return false;
-        }
     }
     if (this->request.state != Request::ERROR) {
         while (true) {
@@ -83,11 +74,8 @@ bool Connection::on_writable() {
     }
     ssize_t bytes_sent = write(_fd, this->write_buffer.c_str(), this->write_buffer.size());
 
-    if (bytes_sent < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return true; 
-        }
-        return false; 
+    if (bytes_sent <= 0) {
+        return true; 
     }
     this->write_buffer.erase(0, bytes_sent);
     return true; 

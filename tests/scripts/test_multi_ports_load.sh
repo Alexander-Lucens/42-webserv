@@ -19,6 +19,21 @@ CONFIG_FILE="tests/configs/multi_port.conf"
 ./webserv "$CONFIG_FILE" > /dev/null 2>&1 &
 SERVER_PID=$!
 
+cleanup() {
+    kill -TERM $SERVER_PID 2>/dev/null || true
+    # Wait for graceful shutdown (up to 3 seconds)
+    WAIT_COUNTER=0
+    while kill -0 $SERVER_PID 2>/dev/null && [ $WAIT_COUNTER -lt 30 ]; do
+      sleep 0.1
+      WAIT_COUNTER=$((WAIT_COUNTER + 1))
+    done
+    # Force kill if still running
+    if kill -0 $SERVER_PID 2>/dev/null; then
+      kill -9 $SERVER_PID 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
 TOTAL_AVAILABILITY=0
 PORT_COUNT=0
 
@@ -42,7 +57,6 @@ for i in {0..2}; do
 
   if [[ -z "$AVAILABILITY" ]]; then
     echo -e "${C_RED}❌ Failed to parse availability for port ${PORT}${C_RST}"
-    kill -TERM "$SERVER_PID"
     exit 1
   fi
 
@@ -54,13 +68,11 @@ for i in {0..2}; do
 
   if [[ "$IS_ZERO" -eq 1 ]]; then
     echo -e "${C_RED}❌ Port ${PORT} failed availability: ${AVAILABILITY}%${C_RST}"
-    kill -TERM "$SERVER_PID"
     exit 1
   fi
 
   if [[ "$IS_LOW" -eq 1 ]]; then
     echo -e "${C_RED}❌ Port ${PORT} below threshold (${AVAILABILITY}% < ${MIN_SUCCESS_RATE}%)${C_RST}"
-    kill -TERM "$SERVER_PID"
     exit 1
   fi
 
@@ -70,8 +82,6 @@ for i in {0..2}; do
   sleep 5
 
 done
-
-kill -TERM "$SERVER_PID"
 
 AVERAGE=$(awk "BEGIN {print $TOTAL_AVAILABILITY / $PORT_COUNT}")
 

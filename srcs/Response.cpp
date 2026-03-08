@@ -347,8 +347,8 @@ Response Response::handle_delete(const Request &request)
 		return handle_error(status_code);
 	if (std::remove(file_path.c_str()) != 0)
 	{
-		LOG_ERROR("File not found: " << file_path);
-		return handle_error(Utils::get_errno_code());
+		LOG_ERROR("File delete error: " << file_path);
+		return handle_error(500);  // Server error - deletion failed
 	}
 
 	std::string body = generate_success_page("200 Deleted", 
@@ -534,7 +534,7 @@ int Response::validate_file_path(const std::string& file_path)
     }
     if (!FileHandler::is_readable(file_path)) {
         LOG_ERROR("File not readable: " << file_path);
-        return Utils::get_errno_code();
+        return Utils::get_file_access_code(file_path);  // Returns 404 or 403 based on file access
     }
 	struct stat file_info;
 	if (stat(file_path.c_str(), &file_info) == 0)

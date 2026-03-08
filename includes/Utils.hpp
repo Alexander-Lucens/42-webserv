@@ -2,7 +2,6 @@
 
 #include <string>
 #include <ctime>
-#include <cerrno>
 #include "Logger.hpp"
 
 
@@ -17,7 +16,7 @@ class Utils {
 	static std::string	lower_case(std::string str);
 	static std::string	upper_case(std::string str);
 	static std::string	dash_to_underscore(std::string str);
-	static int			get_errno_code();
+	static int			get_file_access_code(const std::string& file_path);
 	static bool			is_valid_uri(const std::string& uri);
 
 };

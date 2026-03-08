@@ -16,6 +16,16 @@ sleep 1
 
 cleanup() {
     kill -TERM $SERVER_PID 2>/dev/null || true
+    # Wait for graceful shutdown (up to 3 seconds)
+    WAIT_COUNTER=0
+    while kill -0 $SERVER_PID 2>/dev/null && [ $WAIT_COUNTER -lt 30 ]; do
+      sleep 0.1
+      WAIT_COUNTER=$((WAIT_COUNTER + 1))
+    done
+    # Force kill if still running
+    if kill -0 $SERVER_PID 2>/dev/null; then
+      kill -9 $SERVER_PID 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT
 

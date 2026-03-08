@@ -6,8 +6,6 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
-#include <errno.h>
-
 #include "Socket.hpp"
 #include "Request.hpp"
 #include "Response.hpp"

@@ -3,6 +3,8 @@
 #include <cctype>
 #include <string>
 #include <algorithm>
+#include <unistd.h>
+#include <sys/stat.h>
 
 /* Returns current time and date */
 std::string Utils::get_http_date() 
@@ -25,18 +27,15 @@ std::string Utils::extract_boundary(const std::string& content_type)
 }
 
 
-int Utils::get_errno_code()
+int Utils::get_file_access_code(const std::string& file_path)
 {
-	switch (errno)
-	{
-		case ENOENT:
-			return 404;
-		case EACCES:
-		case EPERM:
-			return 403;
-		default:
-			return 500;
+	if (access(file_path.c_str(), F_OK) == -1) {
+		return 404;
 	}
+	if (access(file_path.c_str(), R_OK) == -1) {
+		return 403;
+	}
+	return 200;
 }
 
 

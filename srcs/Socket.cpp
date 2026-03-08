@@ -6,7 +6,6 @@
 
 #include <cstring>
 #include <stdexcept>
-#include <cerrno>
 #include <sstream>
 
 Socket::Socket() : _fd(-1), _port(0) {
@@ -48,7 +47,7 @@ Socket::Socket(int port) {
 
 	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::stringstream ss;
-		ss << "Failed to bind socket: " << strerror(errno);
+		ss << "Failed to bind socket: " << _fd << " on port: " << port;
 		throw std::runtime_error(ss.str());
 	}
 
@@ -93,7 +92,7 @@ void Socket::setup(int port) {
 
 	if (bind(_fd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::stringstream ss;
-		ss << "Failed to bind socket: " << strerror(errno);
+		ss << "Failed to bind socket: " << _fd << " on port: " << port;
 		throw std::runtime_error(ss.str());
 	}
 

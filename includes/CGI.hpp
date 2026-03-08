@@ -5,7 +5,6 @@
 #include <map>
 #include <iostream>
 #include <unistd.h>
-#include <errno.h>
 #include <cstring>
 #include <cstdlib>
 #include <ctime>

@@ -14,9 +14,8 @@ PORT=8080
 
 echo -e "${C_PUR}=== Starting Valgrind Memory Test ===${C_RST}"
 
-if rm -rf $VALGRIND_LOG; then
-  touch $VALGRIND_LOG
-fi
+echo "" > valgrind.log # Clear previous log
+sleep 0.5 # Ensure log file is ready
 
 echo -e "${C_BLU}[*] Starting webserv with Valgrind...${C_RST}"
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file="$VALGRIND_LOG" ./webserv "$CONFIG_FILE" > /dev/null 2>&1 &
@@ -42,11 +41,39 @@ fi
 echo -e "${C_GRN}[✅] Server is up and running!${C_RST}"
 
 echo -e "${C_BLU}[*] Sending SIGTERM to gracefully stop server...${C_RST}"
-kill -TERM $SERVER_PID
+kill -TERM $SERVER_PID 2>/dev/null || true
+
+# Wait for graceful shutdown (up to 3 seconds, shorter timeout for Valgrind)
+WAIT_COUNTER=0
+MAX_WAIT=30
+while kill -0 $SERVER_PID 2>/dev/null && [ $WAIT_COUNTER -lt $MAX_WAIT ]; do
+  sleep 0.1
+  WAIT_COUNTER=$((WAIT_COUNTER + 1))
+done
+
+# Force kill if still running
+if kill -0 $SERVER_PID 2>/dev/null; then
+  echo -e "${C_YLW}[!] Process did not exit gracefully, force killing...${C_RST}"
+  kill -9 $SERVER_PID 2>/dev/null || true
+  sleep 0.5
+fi
+
+# Kill any remaining memcheck-amd64 processes from Valgrind
+pkill -9 memcheck-amd64- 2>/dev/null || true
+
 wait $SERVER_PID 2>/dev/null || true
 echo -e "${C_GRN}[✅] Server stopped.${C_RST}"
 
+sleep 1
+
 echo -e "${C_PUR}=== Valgrind Report ===${C_RST}"
+
+# Check if log file exists and has content
+if [ ! -f "$VALGRIND_LOG" ] || [ ! -s "$VALGRIND_LOG" ]; then
+  echo -e "${C_RED}[❌] Valgrind log file is empty or missing!${C_RST}"
+  exit 1
+fi
+
 ERRORS=$(grep "ERROR SUMMARY:" "$VALGRIND_LOG" | awk '{print $4}')
 
 if [ "$ERRORS" == "0" ]; then
@@ -63,6 +90,5 @@ else
       else { printf "\033[0;33m%s\033[0m\n", $0 }
   }' "$VALGRIND_LOG"
   echo -e "\n${C_RED}Check $VALGRIND_LOG for full details.${C_RST}"
-  # rm -rf "$VALGRIND_LOG"
   exit 1
 fi
