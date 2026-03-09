@@ -82,9 +82,9 @@ curl -v -H "Host: example.com" http://localhost:8080/
 curl -v http://localhost:8080/nonexistent.html
 ```
 
-#### GET to trigger 403 (Forbidden)
+#### GET to trigger 404
 ```bash
-curl -v http://localhost:8080/private
+curl -v http://localhost:8080/not-existing-page
 ```
 
 #### GET to trigger 405 
