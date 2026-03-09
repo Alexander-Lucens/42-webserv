@@ -112,6 +112,26 @@ curl -v -X DELETE http://localhost:8080/uploads/webserv
 curl -X POST -d 'username=Lara&password=enterpassword' http://localhost:8080/submit
 ```
 
+#### Send a GET Python CGI request
+```bash
+curl -X GET "http://localhost:8080/cgi-bin/script.py?name=Nabonassar"
+```
+
+#### SSend a POST Python CGI request
+```bash
+curl -X POST "http://localhost:8080/cgi-bin/script.py?name=Nabopolassar"
+```
+
+#### Send a GET Rust CGI request
+```bash
+curl -X GET "http://localhost:8080/cgi-bin/rust_program?name=Nebuchadnezzar"
+```
+
+#### Send a POST Rust CGI request
+```bash
+curl -X POST "http://localhost:8080/cgi-bin/rust_program?name=Neriglissar"
+```
+
 #### Send a request with unkown method
 ```bash
 curl -v -X UNKNOWN http://localhost:8080/
