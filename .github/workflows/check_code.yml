@@ -31,29 +31,33 @@ jobs:
       run: make re
 
     # Check if its runinig and have valid response
-    - name: Run ALL Test
+    # - name: Run ALL Test
+    #   run: |
+    #     ./tests/scripts/start_all.sh
+
+    # Check if its runinig and have valid response
+     - name: Run CGI Test
       run: |
-        ./tests/scripts/start_all.sh
-
-    # # Check if its runinig and have valid response
-    # - name: Run Response Test
-    #   run: |
-    #     ./tests/scripts/test_response.sh
+        ./tests/scripts/test_cgi.sh
+    
+    - name: Run Response Test
+      run: |
+        ./tests/scripts/test_response.sh
         
-    # # Check how it performs under load, expects min 95% success rate
-    # - name: Run Load Test for 10 seconds
-    #   run: |
-    #     ./tests/scripts/test_load.sh
+    # Check how it performs under load, expects min 95% success rate
+    - name: Run Load Test for 10 seconds
+      run: |
+        ./tests/scripts/test_load.sh
 
-    # # Check for memory leaks with valgrind
-    # - name: Run Valgrind Test
-    #   run: |
-    #     ./tests/scripts/test_memory.sh
+    # Check for memory leaks with valgrind
+    - name: Run Valgrind Test
+      run: |
+        ./tests/scripts/test_memory.sh
 
-    # # Check load on 10 ports for 5 seconds each
-    # - name: Run Multi ports Load Test for 5 seconds each
-    #   run: |
-    #     ./tests/scripts/test_multi_ports_load.sh
+    # Check load on 10 ports for 5 seconds each
+    - name: Run Multi ports Load Test for 5 seconds each
+      run: |
+        ./tests/scripts/test_multi_ports_load.sh
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
