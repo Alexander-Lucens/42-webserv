@@ -36,7 +36,7 @@ jobs:
     #     ./tests/scripts/start_all.sh
 
     # Check if its runinig and have valid response
-     - name: Run CGI Test
+    - name: Run CGI Test
       run: |
         ./tests/scripts/test_cgi.sh
     
