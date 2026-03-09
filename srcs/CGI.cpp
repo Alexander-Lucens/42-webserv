@@ -82,7 +82,7 @@ Response handle_post_cgi(const Request& request, Response& response, Language la
 	{
 		setpgid(0, 0);
 		signal(SIGALRM, SIG_DFL);
-		alarm(3);
+		alarm(1);
 
 		close(pipefd_in[1]);
 		close(pipefd_out[0]);
@@ -168,7 +168,7 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 	{
 		setpgid(0, 0);
 		signal(SIGALRM, SIG_DFL);
-		alarm(3);
+		alarm(1);
 		
 		close(pipefd_out[0]);
 
@@ -178,7 +178,6 @@ Response handle_get_cgi(const Request& request, Response& response, Language lan
 			_exit(1);
 		}
 
-			// closing fd that has been duplicated
 		close(pipefd_out[1]);
 
 		set_cgi_env(request);
