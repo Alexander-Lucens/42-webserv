@@ -10,6 +10,11 @@ if [ -n "$PS_BEFORE" ]; then
 	echo -e "\033[0;33m Kill them, or insure that they not in range" "\033[0;32m8080-8089\033[0m"
 fi
 
+if make; then 
+	echo -e "\033[0;32m./webserv - created!\033[0m"
+	sleep 1
+fi
+
 for test_script in tests/scripts/test_*.sh; do
 	echo -e "\033[0;35mRunning $test_script...\033[0m"
 	if bash "$test_script"; then
