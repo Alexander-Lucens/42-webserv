@@ -41,13 +41,7 @@ bool Connection::on_readable() {
         if (this->request.state == Request::ERROR) {
             return false;
         }
-
         this->read_buffer.append(buffer, bytes_read);
-        if (MAX_REQUEST_SIZE != 0 && this->read_buffer.size() > MAX_REQUEST_SIZE) {
-            this->request.state = Request::ERROR;
-            this->error_code = 413;
-            scan_buffer();
-        }
 	}
     if (bytes_read == 0) {
         return false;
@@ -254,12 +248,17 @@ int Connection::scan_buffer() {
 			return (CONTINUE);
         }
         case Request::DONE: {
+            if (MAX_REQUEST_SIZE != 0 && this->request.body.size() > MAX_REQUEST_SIZE) {
+                this->request.state = Request::ERROR;
+                this->error_code = 413;
+                return (CONTINUE);
+            }
+            
             this->response = this->response.handle_request(this->request);
             
 			this->clean_buffer_for_new_request();
             this->request.clear();
             this->request.state = Request::REQUEST_LINE;
-            // new UPDATE
 			std::string serialized = this->response.serialize();
             this->write_buffer += serialized;
             return (STOP);

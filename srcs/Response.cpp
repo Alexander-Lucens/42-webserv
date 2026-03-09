@@ -121,7 +121,6 @@ Response Response::handle_request(const Request &request)
             return handle_redirect(request);
         }
     }
-    // LOG_WARNING("Handling request for URI: " << request.uri << " with method: " << request.method);
 	/*	========= END ============. */
 	if (request.method == "GET")
 		return (handle_get(request));
@@ -348,7 +347,7 @@ Response Response::handle_delete(const Request &request)
 	if (std::remove(file_path.c_str()) != 0)
 	{
 		LOG_ERROR("File delete error: " << file_path);
-		return handle_error(500);  // Server error - deletion failed
+		return handle_error(500); 
 	}
 
 	std::string body = generate_success_page("200 Deleted", 
@@ -534,7 +533,7 @@ int Response::validate_file_path(const std::string& file_path)
     }
     if (!FileHandler::is_readable(file_path)) {
         LOG_ERROR("File not readable: " << file_path);
-        return Utils::get_file_access_code(file_path);  // Returns 404 or 403 based on file access
+        return Utils::get_file_access_code(file_path);
     }
 	struct stat file_info;
 	if (stat(file_path.c_str(), &file_info) == 0)
